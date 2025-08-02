@@ -10,6 +10,21 @@
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
 
+## Features
+
+### 🪑 Collaborative Furniture Matching
+- **Swipe Interface**: Tinder-like interface for reviewing furniture items
+- **Product Management**: Add furniture items via URL with automatic information extraction
+- **Matching System**: Track swipes and celebrate when both users like the same item
+- **Iframe Browsing**: Browse product pages directly within the app using iframe modals
+
+### 🔗 Iframe Product Browsing
+- **Modal Interface**: Browse product URLs in a responsive modal overlay
+- **Fallback Support**: Automatic fallback to new tab if iframe embedding is blocked
+- **Mobile Optimized**: Full-screen experience on mobile devices
+- **Navigation Controls**: Back button, close button, and "Open in New Tab" option
+- **Future Ready**: Placeholder for "Add to Collection" functionality
+
 ## Environment Setup
 
 To enable product scraping functionality, you need to set up the following environment variables:
@@ -54,6 +69,16 @@ Your project is live at:
 Continue building your app on:
 
 **[https://v0.dev/chat/projects/qAUAabR92uy](https://v0.dev/chat/projects/qAUAabR92uy)**
+
+## Testing the Iframe Feature
+
+You can test the iframe functionality by visiting `/test-iframe` in your browser. This page provides test URLs to verify:
+
+- Modal opening and closing
+- Responsive design (desktop vs mobile)
+- Fallback behavior for blocked sites
+- Navigation controls
+- Keyboard accessibility
 
 ## How It Works
 
