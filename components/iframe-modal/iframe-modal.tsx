@@ -71,10 +71,13 @@ export function IframeModal({
     console.error("Iframe error:", error)
     setIsLoading(false)
     
-    // Check if it's a blocking error
+    // Check if it's a blocking error or connection refused
     if (error.message?.includes('X-Frame-Options') || 
         error.message?.includes('blocked') ||
-        error.message?.includes('forbidden')) {
+        error.message?.includes('forbidden') ||
+        error.message?.includes('Connection refused') ||
+        error.message?.includes('refused to connect')) {
+      console.log("Detected blocked iframe, showing fallback")
       setIsBlocked(true)
     } else {
       setError(error.message || "Failed to load content")
