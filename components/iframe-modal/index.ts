@@ -1,4 +1,5 @@
 export { IframeModal } from './iframe-modal'
 export { IframeHeader } from './iframe-header'
 export { IframeContent } from './iframe-content'
-export { IframeFallback } from './iframe-fallback' 
+export { IframeFallback } from './iframe-fallback'
+export { IframeAlternatives } from './iframe-alternatives' 

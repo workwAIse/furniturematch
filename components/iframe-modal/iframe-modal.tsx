@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { IframeHeader } from "./iframe-header"
 import { IframeContent } from "./iframe-content"
 import { IframeFallback } from "./iframe-fallback"
+import { IframeAlternatives } from "./iframe-alternatives"
 
 interface IframeModalProps {
   isOpen: boolean
@@ -135,8 +136,8 @@ export function IframeModal({
           )}
 
           {isBlocked ? (
-            <IframeFallback
-              url={url}
+            <IframeAlternatives
+              url={url || ""}
               productTitle={productTitle}
               onOpenInNewTab={handleFallbackToNewTab}
               onClose={onClose}

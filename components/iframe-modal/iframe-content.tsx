@@ -12,6 +12,7 @@ export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [hasLoaded, setHasLoaded] = useState(false)
   const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!url) return
@@ -65,7 +66,7 @@ export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
         clearTimeout(loadTimeout)
       }
     }
-  }, [url, onLoad, onError, hasLoaded, loadTimeout])
+  }, [url, onLoad, onError, hasLoaded, loadTimeout, attempt])
 
   if (!url) {
     return (
@@ -75,19 +76,59 @@ export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
     )
   }
 
-  return (
-    <iframe
-      ref={iframeRef}
-      src={url}
-      className="w-full h-full border-0"
-      title="Product page"
-      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-      loading="lazy"
-      referrerPolicy="no-referrer"
-      onError={(e) => {
+  // Try different approaches based on attempt number
+  const getIframeProps = () => {
+    const baseProps = {
+      ref: iframeRef,
+      className: "w-full h-full border-0",
+      title: "Product page",
+      loading: "lazy" as const,
+      onError: (e: any) => {
         console.error("Iframe onError event:", e)
         onError(new Error("Iframe failed to load"))
-      }}
-    />
+      }
+    }
+
+    // First attempt: Standard iframe
+    if (attempt === 0) {
+      return {
+        ...baseProps,
+        src: url,
+        sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
+        referrerPolicy: "no-referrer" as const
+      }
+    }
+
+    // Second attempt: Try with different referrer policy
+    if (attempt === 1) {
+      return {
+        ...baseProps,
+        src: url,
+        sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
+        referrerPolicy: "origin" as const
+      }
+    }
+
+    // Third attempt: Minimal sandbox
+    if (attempt === 2) {
+      return {
+        ...baseProps,
+        src: url,
+        sandbox: "allow-scripts allow-forms",
+        referrerPolicy: "no-referrer" as const
+      }
+    }
+
+    // Default fallback
+    return {
+      ...baseProps,
+      src: url,
+      sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
+      referrerPolicy: "no-referrer" as const
+    }
+  }
+
+  return (
+    <iframe {...getIframeProps()} />
   )
 } 
