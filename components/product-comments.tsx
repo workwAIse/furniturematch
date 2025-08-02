@@ -18,16 +18,15 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState("")
   const [showComments, setShowComments] = useState(false)
 
   // Load comments on mount and when productId changes
   useEffect(() => {
-    if (showComments) {
-      loadComments()
-    }
-  }, [productId, showComments])
+    loadComments()
+  }, [productId])
 
   const loadComments = async () => {
     try {
@@ -35,6 +34,8 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
       setComments(fetchedComments)
     } catch (error) {
       console.error('Error loading comments:', error)
+    } finally {
+      setIsInitialLoading(false)
     }
   }
 
@@ -133,9 +134,10 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
         size="sm"
         onClick={() => setShowComments(!showComments)}
         className="w-full h-8 text-xs"
+        disabled={isInitialLoading}
       >
         <MessageCircle className="h-3 w-3 mr-1" />
-        Comments ({comments.length})
+        Comments {isInitialLoading ? "..." : `(${comments.length})`}
       </Button>
 
       {showComments && (
@@ -149,12 +151,12 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
                 className="flex-1 h-8 text-xs"
-                disabled={isLoading}
+                disabled={isLoading || isInitialLoading}
               />
               <Button
                 size="sm"
                 onClick={handleAddComment}
-                disabled={!newComment.trim() || isLoading}
+                disabled={!newComment.trim() || isLoading || isInitialLoading}
                 className="h-8 px-2"
               >
                 <Send className="h-3 w-3" />
@@ -163,7 +165,11 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
 
             {/* Comments List */}
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {comments.length === 0 ? (
+              {isInitialLoading ? (
+                <p className="text-xs text-gray-500 text-center py-2">
+                  Loading comments...
+                </p>
+              ) : comments.length === 0 ? (
                 <p className="text-xs text-gray-500 text-center py-2">
                   No comments yet. Be the first to comment!
                 </p>
