@@ -418,6 +418,10 @@ export default function FurnitureMatcher() {
     })
   }
 
+  const openExternal = (url: string) => {
+    window.open(url, '_blank')
+  }
+
   const closeIframe = () => {
     setIframeState({
       isOpen: false,
@@ -1112,6 +1116,7 @@ export default function FurnitureMatcher() {
           productTitle={iframeState.productTitle || undefined}
           onClose={closeIframe}
           onBack={goBackFromIframe}
+          onViewExternal={openExternal}
         />
       </div>
     </ProtectedRoute>
