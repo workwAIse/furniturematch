@@ -661,7 +661,8 @@ export default function FurnitureMatcher() {
                   <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.title}
-                    className="w-full h-full object-contain rounded-t-lg bg-gray-50"
+                    className="w-full h-full object-contain rounded-t-lg bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => openIframe(product.url, product.title)}
                     onError={(e) => {
                       console.error("Image failed to load:", product.image)
                       e.currentTarget.src = "/placeholder.svg?height=400&width=300&query=furniture"
@@ -776,7 +777,8 @@ export default function FurnitureMatcher() {
                         <img
                           src={product.image || "/placeholder.svg"}
                           alt={product.title}
-                          className="w-16 h-16 object-contain rounded-lg flex-shrink-0 bg-gray-50"
+                          className="w-16 h-16 object-contain rounded-lg flex-shrink-0 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => openIframe(product.url, product.title)}
                           onError={(e) => {
                             console.error("Image failed to load:", product.image)
                             e.currentTarget.src = "/placeholder.svg?height=64&width=64&query=furniture"
@@ -838,7 +840,8 @@ export default function FurnitureMatcher() {
                       <img
                         src={product.image || "/placeholder.svg"}
                         alt={product.title}
-                        className="w-14 h-14 object-contain rounded-lg flex-shrink-0 bg-gray-50"
+                        className="w-14 h-14 object-contain rounded-lg flex-shrink-0 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => openIframe(product.url, product.title)}
                         onError={(e) => {
                           console.error("Image failed to load:", product.image)
                           e.currentTarget.src = "/placeholder.svg?height=56&width=56&query=furniture"
@@ -921,7 +924,8 @@ export default function FurnitureMatcher() {
                       <img
                         src={product.image || "/placeholder.svg"}
                         alt={product.title}
-                        className="w-14 h-14 object-contain rounded-lg flex-shrink-0 bg-gray-50"
+                        className="w-14 h-14 object-contain rounded-lg flex-shrink-0 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => openIframe(product.url, product.title)}
                         onError={(e) => {
                           console.error("Image failed to load:", product.image)
                           e.currentTarget.src = "/placeholder.svg?height=56&width=56&query=furniture"
