@@ -14,6 +14,7 @@ import type { Product } from "@/lib/supabase"
 import { useAuth } from "@/lib/auth-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import Confetti from "@/components/confetti"
+import { IframeModal } from "@/components/iframe-modal"
 
 interface SwipeGesture {
   startX: number
@@ -47,6 +48,13 @@ export default function FurnitureMatcher() {
     currentX: 0,
     currentY: 0,
     isDragging: false,
+  })
+
+  // Iframe modal state
+  const [iframeState, setIframeState] = useState({
+    isOpen: false,
+    url: null as string | null,
+    productTitle: null as string | null,
   })
 
   // Load data from database on mount
@@ -400,6 +408,31 @@ export default function FurnitureMatcher() {
     return databaseUserId === 'user1' ? 'user2' : 'user1'
   }
 
+  // Iframe handlers
+  const openIframe = (url: string, productTitle?: string) => {
+    setIframeState({
+      isOpen: true,
+      url,
+      productTitle: productTitle || null,
+    })
+  }
+
+  const closeIframe = () => {
+    setIframeState({
+      isOpen: false,
+      url: null,
+      productTitle: null,
+    })
+  }
+
+  const goBackFromIframe = () => {
+    setIframeState({
+      isOpen: false,
+      url: null,
+      productTitle: null,
+    })
+  }
+
   const handleDeleteProduct = async (productId: string) => {
     if (!user?.email) return
     
@@ -660,7 +693,7 @@ export default function FurnitureMatcher() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(product.url, "_blank")}
+                      onClick={() => openIframe(product.url, product.title)}
                       className="w-full h-7 text-xs"
                     >
                       View Product
@@ -768,7 +801,7 @@ export default function FurnitureMatcher() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(product.url, "_blank")}
+                              onClick={() => openIframe(product.url, product.title)}
                               className="h-7 text-xs"
                             >
                               View Product
@@ -847,7 +880,7 @@ export default function FurnitureMatcher() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(product.url, "_blank")}
+                          onClick={() => openIframe(product.url, product.title)}
                           className="h-7 text-xs"
                         >
                           View Product
@@ -907,7 +940,7 @@ export default function FurnitureMatcher() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(product.url, "_blank")}
+                          onClick={() => openIframe(product.url, product.title)}
                           className="h-7 text-xs"
                         >
                           View Product
@@ -1048,6 +1081,15 @@ export default function FurnitureMatcher() {
             </div>
           </div>
         </div>
+
+        {/* Iframe Modal */}
+        <IframeModal
+          isOpen={iframeState.isOpen}
+          url={iframeState.url}
+          productTitle={iframeState.productTitle || undefined}
+          onClose={closeIframe}
+          onBack={goBackFromIframe}
+        />
       </div>
     </ProtectedRoute>
   )
