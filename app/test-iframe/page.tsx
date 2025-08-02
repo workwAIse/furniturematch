@@ -13,8 +13,8 @@ export default function TestIframePage() {
 
   const testUrls = [
     {
-      url: "https://www.ikea.com/us/en/p/poaeng-armchair-birch-veneer-00160208/",
-      title: "IKEA Poäng Armchair"
+      url: "https://www.ikea.com/us/en/p/revskaer-3-seat-conversation-set-outdoor-anthracite-froesoen-duvholmen-dark-gray-s99584437/",
+      title: "IKEA REVSKÄR 3-Seat Conversation Set"
     },
     {
       url: "https://www.wayfair.com/furniture/pdp/mercury-row-abbott-30-w-armchair-w000123456.html",
@@ -90,7 +90,8 @@ export default function TestIframePage() {
               <li>• Try the back button to return to this page</li>
               <li>• Try the close button to close the modal</li>
               <li>• Test keyboard navigation (Escape to close)</li>
-              <li>• Some sites may show fallback due to X-Frame-Options</li>
+              <li>• IKEA and other sites may show fallback due to X-Frame-Options</li>
+              <li>• The IKEA REVSKÄR set is a real $655 outdoor furniture product</li>
             </ul>
           </div>
         </div>
