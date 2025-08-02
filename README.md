@@ -25,6 +25,14 @@ Any changes you make to your deployed app will be automatically pushed to this r
 - **Navigation Controls**: Back button, close button, and "Open in New Tab" option
 - **Future Ready**: Placeholder for "Add to Collection" functionality
 
+### 💬 Product Comments
+- **Collaborative Discussion**: Add comments to any product in the matches view
+- **Real-time Updates**: Comments are saved and synced across all users
+- **Edit & Delete**: Users can edit or delete their own comments
+- **User Identification**: Comments show user avatars and names
+- **Time Stamps**: Comments display relative time (e.g., "2h ago")
+- **Collapsible Interface**: Comments section can be expanded/collapsed to save space
+
 ## Environment Setup
 
 To enable product scraping functionality, you need to set up the following environment variables:
@@ -70,7 +78,9 @@ Continue building your app on:
 
 **[https://v0.dev/chat/projects/qAUAabR92uy](https://v0.dev/chat/projects/qAUAabR92uy)**
 
-## Testing the Iframe Feature
+## Testing Features
+
+### Testing the Iframe Feature
 
 You can test the iframe functionality by visiting `/test-iframe` in your browser. This page provides test URLs to verify:
 
@@ -79,6 +89,15 @@ You can test the iframe functionality by visiting `/test-iframe` in your browser
 - Fallback behavior for blocked sites
 - Navigation controls
 - Keyboard accessibility
+
+### Testing the Comments Feature
+
+You can test the comments functionality by visiting `/test-comments` in your browser. This page allows you to:
+
+- Select different products to test comments on
+- Add, edit, and delete comments
+- Verify real-time updates across users
+- Test the collapsible interface
 
 ## How It Works
 

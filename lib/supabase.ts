@@ -54,7 +54,17 @@ export interface DatabaseProduct {
   updated_at: string
 }
 
+export interface DatabaseComment {
+  id: string
+  product_id: string
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
 export type Product = Omit<DatabaseProduct, 'created_at' | 'updated_at'>
+export type Comment = DatabaseComment
 
 // User mapping for easy identification
 export const USER_MAPPING = {

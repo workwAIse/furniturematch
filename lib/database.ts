@@ -1,4 +1,4 @@
-import { supabase, type Product } from './supabase'
+import { supabase, type Product, type Comment, type DatabaseComment } from './supabase'
 
 export class DatabaseService {
   // Get all products
@@ -92,5 +92,68 @@ export class DatabaseService {
     }
 
     return data || []
+  }
+
+  // Comment methods
+  // Get comments for a product
+  static async getComments(productId: string): Promise<Comment[]> {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching comments:', error)
+      throw new Error('Failed to fetch comments')
+    }
+
+    return data || []
+  }
+
+  // Add a new comment
+  static async addComment(comment: Omit<DatabaseComment, 'id' | 'created_at' | 'updated_at'>): Promise<Comment> {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([comment])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error adding comment:', error)
+      throw new Error('Failed to add comment')
+    }
+
+    return data
+  }
+
+  // Update a comment
+  static async updateComment(commentId: string, content: string): Promise<Comment> {
+    const { data, error } = await supabase
+      .from('comments')
+      .update({ content })
+      .eq('id', commentId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating comment:', error)
+      throw new Error('Failed to update comment')
+    }
+
+    return data
+  }
+
+  // Delete a comment
+  static async deleteComment(commentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId)
+
+    if (error) {
+      console.error('Error deleting comment:', error)
+      throw new Error('Failed to delete comment')
+    }
   }
 } 

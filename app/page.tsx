@@ -15,6 +15,7 @@ import { useAuth } from "@/lib/auth-context"
 import { ProtectedRoute } from "@/components/protected-route"
 import Confetti from "@/components/confetti"
 import { IframeModal } from "@/components/iframe-modal"
+import { ProductComments } from "@/components/product-comments"
 
 interface SwipeGesture {
   startX: number
@@ -807,6 +808,12 @@ export default function FurnitureMatcher() {
                               View Product
                             </Button>
                           </div>
+                          
+                          {/* Comments Section */}
+                          <ProductComments 
+                            productId={product.id} 
+                            currentUserId={mapUserToDatabaseId(user?.email || "")} 
+                          />
                         </div>
                       </div>
                     </CardContent>
@@ -885,6 +892,12 @@ export default function FurnitureMatcher() {
                         >
                           View Product
                         </Button>
+                        
+                        {/* Comments Section */}
+                        <ProductComments 
+                          productId={product.id} 
+                          currentUserId={mapUserToDatabaseId(user?.email || "")} 
+                        />
                       </div>
                     </div>
                   </CardContent>
@@ -945,6 +958,12 @@ export default function FurnitureMatcher() {
                         >
                           View Product
                         </Button>
+                        
+                        {/* Comments Section */}
+                        <ProductComments 
+                          productId={product.id} 
+                          currentUserId={mapUserToDatabaseId(user?.email || "")} 
+                        />
                       </div>
                     </div>
                   </CardContent>
