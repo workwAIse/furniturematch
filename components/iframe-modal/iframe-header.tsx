@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, X, ExternalLink, Plus } from "lucide-react"
+import { ArrowLeft, X, ExternalLink, Eye, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface IframeHeaderProps {
@@ -8,6 +8,7 @@ interface IframeHeaderProps {
   url: string | null
   onClose: () => void
   onBack: () => void
+  onViewExternal?: () => void
   isLoading?: boolean
 }
 
@@ -16,6 +17,7 @@ export function IframeHeader({
   url, 
   onClose, 
   onBack, 
+  onViewExternal,
   isLoading = false 
 }: IframeHeaderProps) {
   const getDomainFromUrl = (url: string) => {
@@ -29,6 +31,9 @@ export function IframeHeader({
   const handleOpenInNewTab = () => {
     if (url) {
       window.open(url, '_blank')
+    }
+    if (onViewExternal) {
+      onViewExternal()
     }
   }
 
@@ -64,31 +69,25 @@ export function IframeHeader({
 
       {/* Right side - Action buttons */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Future Add Button - Placeholder */}
+        {/* View Product (iframe) - Current view */}
+        <Button
+          variant="default"
+          size="sm"
+          className="h-8 px-3 text-xs"
+        >
+          <Eye className="h-3 w-3 mr-1" />
+          View Product
+        </Button>
+
+        {/* View External (new tab) */}
         <Button
           variant="outline"
           size="sm"
           className="h-8 px-3 text-xs"
-          disabled={isLoading}
-          onClick={() => {
-            // TODO: Implement add to collection feature
-            console.log('Add to collection feature coming soon!')
-          }}
-        >
-          <Plus className="h-3 w-3 mr-1" />
-          Add
-        </Button>
-
-        {/* Open in New Tab */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0"
           onClick={handleOpenInNewTab}
-          disabled={isLoading}
         >
-          <ExternalLink className="h-4 w-4" />
-          <span className="sr-only">Open in new tab</span>
+          <Globe className="h-3 w-3 mr-1" />
+          View External
         </Button>
 
         {/* Close */}
@@ -97,7 +96,6 @@ export function IframeHeader({
           size="sm"
           className="h-8 w-8 p-0"
           onClick={onClose}
-          disabled={isLoading}
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>

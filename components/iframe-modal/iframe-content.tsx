@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { Loader2, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface IframeContentProps {
   url: string | null
@@ -10,63 +12,41 @@ interface IframeContentProps {
 
 export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [hasLoaded, setHasLoaded] = useState(false)
-  const [loadTimeout, setLoadTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [attempt, setAttempt] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [proxyContent, setProxyContent] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!url) return
 
-    const iframe = iframeRef.current
-    if (!iframe) return
-
-    // Reset state
-    setHasLoaded(false)
-
-    // Set up load handler
-    const handleLoad = () => {
-      console.log("Iframe loaded successfully")
-      setHasLoaded(true)
-      if (loadTimeout) {
-        clearTimeout(loadTimeout)
-        setLoadTimeout(null)
-      }
-      onLoad()
-    }
-
-    // Set up error handler
-    const handleError = (event: Event) => {
-      console.error("Iframe load error:", event)
-      if (loadTimeout) {
-        clearTimeout(loadTimeout)
-        setLoadTimeout(null)
-      }
-      onError(new Error("Failed to load iframe content"))
-    }
-
-    // Set up timeout to detect connection issues (shorter timeout for better UX)
-    const timeout = setTimeout(() => {
-      if (!hasLoaded) {
-        console.log("Iframe load timeout - likely blocked or connection refused")
-        onError(new Error("Connection refused or content blocked"))
-      }
-    }, 5000) // 5 second timeout for faster fallback
-
-    setLoadTimeout(timeout)
-
-    // Add event listeners
-    iframe.addEventListener('load', handleLoad)
-    iframe.addEventListener('error', handleError)
-
-    // Clean up
-    return () => {
-      iframe.removeEventListener('load', handleLoad)
-      iframe.removeEventListener('error', handleError)
-      if (loadTimeout) {
-        clearTimeout(loadTimeout)
+    const loadContent = async () => {
+      setIsLoading(true)
+      setError(null)
+      setProxyContent(null)
+      try {
+        const response = await fetch('/api/proxy-content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        })
+        const data = await response.json()
+        if (data.success && data.content) {
+          setProxyContent(data.content)
+          onLoad()
+        } else {
+          setError(data.error || "Failed to load content")
+          onError(new Error(data.error || "Failed to load content"))
+        }
+      } catch (err) {
+        const errorMsg = "Failed to load content"
+        setError(errorMsg)
+        onError(new Error(errorMsg))
+      } finally {
+        setIsLoading(false)
       }
     }
-  }, [url, onLoad, onError, hasLoaded, loadTimeout, attempt])
+    loadContent()
+  }, [url, onLoad, onError])
 
   if (!url) {
     return (
@@ -76,59 +56,47 @@ export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
     )
   }
 
-  // Try different approaches based on attempt number
-  const getIframeProps = () => {
-    const baseProps = {
-      ref: iframeRef,
-      className: "w-full h-full border-0",
-      title: "Product page",
-      loading: "lazy" as const,
-      onError: (e: any) => {
-        console.error("Iframe onError event:", e)
-        onError(new Error("Iframe failed to load"))
-      }
-    }
-
-    // First attempt: Standard iframe
-    if (attempt === 0) {
-      return {
-        ...baseProps,
-        src: url,
-        sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
-        referrerPolicy: "no-referrer" as const
-      }
-    }
-
-    // Second attempt: Try with different referrer policy
-    if (attempt === 1) {
-      return {
-        ...baseProps,
-        src: url,
-        sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
-        referrerPolicy: "origin" as const
-      }
-    }
-
-    // Third attempt: Minimal sandbox
-    if (attempt === 2) {
-      return {
-        ...baseProps,
-        src: url,
-        sandbox: "allow-scripts allow-forms",
-        referrerPolicy: "no-referrer" as const
-      }
-    }
-
-    // Default fallback
-    return {
-      ...baseProps,
-      src: url,
-      sandbox: "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
-      referrerPolicy: "no-referrer" as const
-    }
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Loading product page...</p>
+        </div>
+      </div>
+    )
   }
 
-  return (
-    <iframe {...getIframeProps()} />
-  )
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-50">
+        <div className="text-center p-6">
+          <ExternalLink className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Unable to load content</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button 
+            onClick={() => window.open(url, '_blank')} 
+            className="w-full"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Open in New Tab
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (proxyContent) {
+    return (
+      <iframe
+        ref={iframeRef}
+        srcDoc={proxyContent}
+        className="w-full h-full border-0"
+        title="Product page"
+        sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+      />
+    )
+  }
+
+  return null
 } 

@@ -20,6 +20,7 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 ### 🔗 Iframe Product Browsing
 - **Modal Interface**: Browse product URLs in a responsive modal overlay
+- **Click to Open**: Click on any furniture item image to open the product page in a modal
 - **Fallback Support**: Automatic fallback to new tab if iframe embedding is blocked
 - **Mobile Optimized**: Full-screen experience on mobile devices
 - **Navigation Controls**: Back button, close button, and "Open in New Tab" option
@@ -79,6 +80,20 @@ Continue building your app on:
 **[https://v0.dev/chat/projects/qAUAabR92uy](https://v0.dev/chat/projects/qAUAabR92uy)**
 
 ## Testing Features
+
+### Testing the Modal Feature
+
+You can test the modal functionality by:
+
+1. **Clicking on Images**: Click on any furniture item image in the swipe view or matches view to open the product page in a modal
+2. **Test Page**: Visit `/test-iframe` in your browser for additional iframe testing
+3. **Automated Tests**: Run `npm test` to execute the automated test suite
+
+The test suite verifies:
+- Modal opening when clicking on images
+- Correct URL and title display in modal
+- Modal closing functionality
+- Proper CSS classes for clickability and hover effects
 
 ### Testing the Iframe Feature
 
