@@ -16,6 +16,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import Confetti from "@/components/confetti"
 import { IframeModal } from "@/components/iframe-modal"
 import { ProductComments } from "@/components/product-comments"
+import { EnhancedProductCard } from "@/components/enhanced-product-card"
 
 interface SwipeGesture {
   startX: number
@@ -41,6 +42,7 @@ export default function FurnitureMatcher() {
   const [newProductUrl, setNewProductUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [recentlyAddedProduct, setRecentlyAddedProduct] = useState<Product | null>(null)
   const [showMatch, setShowMatch] = useState(false)
   const [lastSwipeTime, setLastSwipeTime] = useState(0)
   const [swipeGesture, setSwipeGesture] = useState<SwipeGesture>({
@@ -245,15 +247,9 @@ export default function FurnitureMatcher() {
       })
       
       setNewProductUrl("")
+      setRecentlyAddedProduct(savedProduct)
       setShowSuccess(true)
       console.log(`[ADD_PRODUCT] Product successfully added, showing success message`)
-      
-      // Show success message for 2 seconds, then switch to swipe view
-      setTimeout(() => {
-        setShowSuccess(false)
-        setCurrentView("swipe")
-        console.log(`[ADD_PRODUCT] Success message hidden, switched to swipe view`)
-      }, 2000)
     } catch (error) {
       console.error(`[ADD_PRODUCT] Error adding product:`, error)
       console.error(`[ADD_PRODUCT] Error details:`, {
@@ -592,15 +588,38 @@ export default function FurnitureMatcher() {
   const ProductAddedMessage = () => (
     <div className="flex flex-col items-center justify-center py-12">
       <div className="text-center">
-        <div className="text-6xl mb-6 text-green-600">
-          ✓
+        <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <Check className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+        <h3 className="text-xl font-bold text-gray-800 mb-3">
           Product Added! 🎉
         </h3>
-        <p className="text-gray-600">
-          Your furniture item has been added successfully!
+        <p className="text-gray-600 text-sm leading-relaxed mb-6">
+          Your furniture item has been added successfully and is now waiting for your partner's review!
         </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center">
+          <Button
+            onClick={() => {
+              setNewProductUrl("")
+              setShowSuccess(false)
+              setRecentlyAddedProduct(null)
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-medium"
+          >
+            Add Another Item
+          </Button>
+          {recentlyAddedProduct && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                openIframe(recentlyAddedProduct.url, recentlyAddedProduct.title)
+              }}
+              className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 font-medium"
+            >
+              View Item
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -608,15 +627,24 @@ export default function FurnitureMatcher() {
   const MatchCelebration = () => (
     <div className="flex flex-col items-center justify-center py-12">
       <div className="text-center">
-        <div className="text-6xl mb-6 text-green-600">
-          ✓
+        <div className="w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
+          <Heart className="h-10 w-10 text-white" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">
-          It's a Match! 🎉
+        <h3 className="text-2xl font-bold text-gray-800 mb-3">
+          It's a Match! 💕
         </h3>
-        <p className="text-gray-600">
-          You both liked the same furniture!
+        <p className="text-gray-600 text-sm leading-relaxed mb-6">
+          You both liked the same furniture! Check your matches to see it.
         </p>
+        <Button
+          onClick={() => {
+            setShowMatch(false)
+            setCurrentView("matched")
+          }}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-medium"
+        >
+          View Matches
+        </Button>
       </div>
       <Confetti />
     </div>
@@ -629,7 +657,7 @@ export default function FurnitureMatcher() {
           {productsToSwipe.slice(0, 2).map((product, index) => (
             <Card
               key={product.id}
-              className={`absolute inset-0 ${index === 0 ? "z-10" : "z-0"} shadow-xl no-select touch-manipulation`}
+              className={`absolute inset-0 ${index === 0 ? "z-10" : "z-0"} shadow-2xl no-select touch-manipulation border-0 bg-white/90 backdrop-blur-sm overflow-hidden`}
               style={{
                 transform: index === 0 ? getSwipeTransform() : "scale(0.95)",
                 opacity: index === 0 ? getSwipeOpacity() : 0.8,
@@ -660,71 +688,89 @@ export default function FurnitureMatcher() {
               }}
             >
               <CardContent className="p-0 h-full flex flex-col">
-                {/* Image Section */}
-                <div className="relative flex-1 min-h-0">
+                {/* Enhanced Image Section */}
+                <div className="relative flex-1 min-h-0 bg-gradient-to-br from-gray-50 to-gray-100">
                   <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.title}
-                    className="w-full h-full object-contain rounded-t-lg bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-all duration-300"
                     onClick={() => openIframe(product.url, product.title)}
                     onError={(e) => {
                       console.error("Image failed to load:", product.image)
                       e.currentTarget.src = "/placeholder.svg?height=400&width=300&query=furniture"
                     }}
                   />
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="secondary" className="text-xs">
+                  
+                  {/* Enhanced Status Badge */}
+                  <div className="absolute top-3 left-3">
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs font-medium bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-700"
+                    >
                       {product.uploaded_by === "user1" ? "You" : "Partner"}
                     </Badge>
                   </div>
+
+                  {/* Price Tag Overlay */}
+                  {product.price && (
+                    <div className="absolute bottom-3 right-3">
+                      <div className="bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                        {product.price}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-600/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
                 </div>
 
-                {/* Content Section */}
-                <div className="p-3 flex-shrink-0 bg-white rounded-b-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-base leading-tight flex-1 mr-2 line-clamp-2">
-                      {product.title}
-                    </h3>
-                    {product.retailer && (
-                      <Badge variant="outline" className="text-xs flex-shrink-0">
-                        {product.retailer}
-                      </Badge>
-                    )}
+                {/* Enhanced Content Section */}
+                <div className="p-4 flex-shrink-0 bg-white space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-lg leading-tight flex-1 mr-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
+                        {product.title}
+                      </h3>
+                      {product.retailer && (
+                        <Badge variant="outline" className="text-xs flex-shrink-0 bg-purple-50 border-purple-200 text-purple-700">
+                          {product.retailer}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">{product.description}</p>
                   </div>
-                  {product.price && <p className="text-base font-bold text-green-600 mb-2">{product.price}</p>}
-                  <p className="text-gray-600 text-xs mb-3 line-clamp-2">{product.description}</p>
 
-                  {/* View Product Button */}
-                  <div className="mb-3">
+                  {/* Enhanced View Product Button */}
+                  <div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openIframe(product.url, product.title)}
-                      className="w-full h-7 text-xs"
+                      className="w-full h-9 text-sm border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300"
                     >
                       View Product
                     </Button>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  {/* Enhanced Action Buttons */}
+                  <div className="flex gap-3">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50 bg-transparent h-9 active:bg-red-100 touch-manipulation"
+                      className="flex-1 border-red-200 text-red-600 hover:bg-red-50 bg-transparent h-10 active:bg-red-100 touch-manipulation hover:border-red-300"
                       onClick={(e) => handleButtonClick(product.id, false, e)}
                       onTouchEnd={(e) => handleButtonTouch(product.id, false, e)}
                     >
-                      <X className="h-4 w-4 mr-1" />
+                      <X className="h-5 w-5 mr-2" />
                       Pass
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700 h-9 active:bg-green-800 touch-manipulation"
+                      className="flex-1 bg-green-600 hover:bg-green-700 h-10 active:bg-green-800 touch-manipulation shadow-lg"
                       onClick={(e) => handleButtonClick(product.id, true, e)}
                       onTouchEnd={(e) => handleButtonTouch(product.id, true, e)}
                     >
-                      <Heart className="h-4 w-4 mr-1" />
+                      <Heart className="h-5 w-5 mr-2" />
                       Like
                     </Button>
                   </div>
@@ -734,20 +780,20 @@ export default function FurnitureMatcher() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-6 px-4">
-          <div className="text-5xl mb-3">🪑</div>
-          <h3 className="text-base font-semibold mb-2">No items to review</h3>
-          <p className="text-gray-600 mb-4 text-sm">
+        <div className="text-center py-8 px-4">
+          <div className="text-6xl mb-4">🪑</div>
+          <h3 className="text-lg font-semibold mb-3">No items to review</h3>
+          <p className="text-gray-600 mb-6 text-sm leading-relaxed">
             {products.length === 0
               ? "Add some furniture items to get started!"
               : "You've reviewed all available items!"}
           </p>
           <Button
             onClick={() => setCurrentView("add")}
-            className="w-full h-10"
+            className="w-full h-12 bg-purple-600 hover:bg-purple-700 shadow-lg"
             size="sm"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-5 w-5 mr-2" />
             Add Furniture Item
           </Button>
         </div>
@@ -758,72 +804,41 @@ export default function FurnitureMatcher() {
   const MatchesView = () => (
     <div className="max-w-sm mx-auto h-full overflow-hidden flex flex-col">
       <Tabs defaultValue="matches" className="w-full h-full flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mb-3 flex-shrink-0">
-          <TabsTrigger value="matches" className="text-xs">
+        <TabsList className="grid w-full grid-cols-3 mb-4 flex-shrink-0 bg-gray-100 p-1 rounded-lg">
+          <TabsTrigger 
+            value="matches" 
+            className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
+          >
             Matches ({matchedProducts.length})
           </TabsTrigger>
-          <TabsTrigger value="yours" className="text-xs">
+          <TabsTrigger 
+            value="yours" 
+            className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
+          >
             Yours ({getYourProducts().length})
           </TabsTrigger>
-          <TabsTrigger value="partners" className="text-xs">
+          <TabsTrigger 
+            value="partners" 
+            className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
+          >
             Partners ({getPartnerProducts().length})
           </TabsTrigger>
         </TabsList>
 
         <div className="flex-1 overflow-y-auto">
-          <TabsContent value="matches" className="space-y-3 mt-0 pb-4">
+          <TabsContent value="matches" className="space-y-4 mt-0 pb-4">
             {matchedProducts.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {matchedProducts.map((product) => (
-                  <Card key={product.id}>
-                    <CardContent className="p-3">
-                      <div className="flex gap-2">
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.title}
-                          className="w-16 h-16 object-contain rounded-lg flex-shrink-0 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => openIframe(product.url, product.title)}
-                          onError={(e) => {
-                            console.error("Image failed to load:", product.image)
-                            e.currentTarget.src = "/placeholder.svg?height=64&width=64&query=furniture"
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-1">
-                            <h3 className="font-semibold line-clamp-2 text-sm flex-1 mr-2">{product.title}</h3>
-                            {product.uploaded_by === mapUserToDatabaseId(user?.email || "") && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteProduct(product.id)}
-                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                          {product.price && <p className="text-sm font-bold text-green-600 mb-1">{product.price}</p>}
-                          <p className="text-xs text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openIframe(product.url, product.title)}
-                              className="h-7 text-xs"
-                            >
-                              View Product
-                            </Button>
-                          </div>
-                          
-                          {/* Comments Section */}
-                          <ProductComments 
-                            productId={product.id} 
-                            currentUserId={mapUserToDatabaseId(user?.email || "")} 
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <EnhancedProductCard
+                    key={product.id}
+                    product={product}
+                    currentUserId={mapUserToDatabaseId(user?.email || "")}
+                    onViewProduct={openIframe}
+                    onDelete={handleDeleteProduct}
+                    variant="compact"
+                    showActions={true}
+                  />
                 ))}
               </div>
             ) : (
@@ -835,80 +850,18 @@ export default function FurnitureMatcher() {
             )}
           </TabsContent>
 
-          <TabsContent value="yours" className="space-y-3 mt-0 pb-4">
+          <TabsContent value="yours" className="space-y-4 mt-0 pb-4">
             {getYourProducts().length > 0 ? (
               getYourProducts().map((product) => (
-                <Card key={product.id}>
-                  <CardContent className="p-3">
-                    <div className="flex gap-2">
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.title}
-                        className="w-14 h-14 object-contain rounded-lg flex-shrink-0 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => openIframe(product.url, product.title)}
-                        onError={(e) => {
-                          console.error("Image failed to load:", product.image)
-                          e.currentTarget.src = "/placeholder.svg?height=56&width=56&query=furniture"
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
-                          <h3 className="font-semibold line-clamp-1 text-sm flex-1 mr-2">{product.title}</h3>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        {product.price && <p className="text-sm font-bold text-green-600 mb-1">{product.price}</p>}
-                        <p className="text-xs text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                        <div className="flex items-center gap-2 mb-2">
-                          {(() => {
-                            const otherUserId = getOtherUserId()
-                            if (!otherUserId) {
-                              return (
-                                <Badge variant="outline" className="text-xs">
-                                  Waiting for partner&apos;s review
-                                </Badge>
-                              )
-                            }
-                            const hasSwiped = product.swipes[otherUserId] !== undefined
-                            const liked = product.swipes[otherUserId] === true
-                            return hasSwiped ? (
-                              <Badge
-                                variant={liked ? "default" : "destructive"}
-                                className="text-xs"
-                              >
-                                Partner: {liked ? "❤️" : "❌"}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs">
-                                Waiting for partner&apos;s review
-                              </Badge>
-                            )
-                          })()}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openIframe(product.url, product.title)}
-                          className="h-7 text-xs"
-                        >
-                          View Product
-                        </Button>
-                        
-                        {/* Comments Section */}
-                        <ProductComments 
-                          productId={product.id} 
-                          currentUserId={mapUserToDatabaseId(user?.email || "")} 
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EnhancedProductCard
+                  key={product.id}
+                  product={product}
+                  currentUserId={mapUserToDatabaseId(user?.email || "")}
+                  onViewProduct={openIframe}
+                  onDelete={handleDeleteProduct}
+                  variant="compact"
+                  showActions={true}
+                />
               ))
             ) : (
               <div className="text-center py-8">
@@ -919,63 +872,18 @@ export default function FurnitureMatcher() {
             )}
           </TabsContent>
 
-          <TabsContent value="partners" className="space-y-3 mt-0 pb-4">
+          <TabsContent value="partners" className="space-y-4 mt-0 pb-4">
             {getPartnerProducts().length > 0 ? (
               getPartnerProducts().map((product) => (
-                <Card key={product.id}>
-                  <CardContent className="p-3">
-                    <div className="flex gap-2">
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.title}
-                        className="w-14 h-14 object-contain rounded-lg flex-shrink-0 bg-gray-50 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => openIframe(product.url, product.title)}
-                        onError={(e) => {
-                          console.error("Image failed to load:", product.image)
-                          e.currentTarget.src = "/placeholder.svg?height=56&width=56&query=furniture"
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold mb-1 line-clamp-1 text-sm">{product.title}</h3>
-                        {product.price && <p className="text-sm font-bold text-green-600 mb-1">{product.price}</p>}
-                        <p className="text-xs text-gray-600 mb-2 line-clamp-2">{product.description}</p>
-                        <div className="flex items-center gap-2 mb-2">
-                          {(() => {
-                            const currentUserId = mapUserToDatabaseId(user?.email || "")
-                            const hasSwiped = product.swipes[currentUserId] !== undefined
-                            const liked = product.swipes[currentUserId] === true
-                            return hasSwiped ? (
-                              <Badge
-                                variant={liked ? "default" : "destructive"}
-                                className="text-xs"
-                              >
-                                You: {liked ? "❤️" : "❌"}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs">
-                                Waiting for your review
-                              </Badge>
-                            )
-                          })()}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openIframe(product.url, product.title)}
-                          className="h-7 text-xs"
-                        >
-                          View Product
-                        </Button>
-                        
-                        {/* Comments Section */}
-                        <ProductComments 
-                          productId={product.id} 
-                          currentUserId={mapUserToDatabaseId(user?.email || "")} 
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EnhancedProductCard
+                  key={product.id}
+                  product={product}
+                  currentUserId={mapUserToDatabaseId(user?.email || "")}
+                  onViewProduct={openIframe}
+                  onSwipe={handleSwipe}
+                  variant="compact"
+                  showActions={true}
+                />
               ))
             ) : (
               <div className="text-center py-8">
@@ -992,19 +900,30 @@ export default function FurnitureMatcher() {
 
   return (
     <ProtectedRoute>
-      <div className="h-mobile-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col overflow-hidden">
-        {/* Header - Fixed */}
-        <div className="bg-white shadow-sm border-b flex-shrink-0 safe-area-top">
-          <div className="flex items-center justify-between p-2">
+      <div className="h-mobile-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex flex-col overflow-hidden">
+        {/* Enhanced Header - Fixed */}
+        <div className="bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 flex-shrink-0 safe-area-top">
+          <div className="flex items-center justify-between p-3">
             {currentView !== "swipe" && (
-              <Button variant="ghost" size="sm" onClick={() => setCurrentView("swipe")} className="p-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setCurrentView("swipe")
+                  setShowSuccess(false)
+                  setRecentlyAddedProduct(null)
+                }} 
+                className="p-2 hover:bg-purple-50 text-purple-600"
+              >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
 
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-purple-600" />
-              <span className="font-semibold text-gray-800 text-sm">FurnitureMatch</span>
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
+                <Users className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-bold text-gray-800 text-base">FurnitureMatch</span>
             </div>
 
             <div className="flex items-center gap-1">
@@ -1012,7 +931,7 @@ export default function FurnitureMatcher() {
                 variant="outline"
                 size="sm"
                 onClick={signOut}
-                className="text-xs h-8 px-2"
+                className="text-xs h-8 px-3 border-gray-200 hover:border-red-300 hover:bg-red-50 text-gray-600 hover:text-red-600"
               >
                 <LogOut className="h-3 w-3 mr-1" />
                 Log Out
@@ -1028,33 +947,51 @@ export default function FurnitureMatcher() {
             {currentView === "swipe" && <SwipeView />}
 
             {currentView === "add" && (
-              <div className="max-w-sm mx-auto pt-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <h2 className="text-lg font-semibold mb-3">Add Furniture Item</h2>
+              <div className="max-w-sm mx-auto pt-6">
+                <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
+                  <CardContent className="p-6">
+                    <div className="text-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Plus className="h-6 w-6 text-white" />
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-800 mb-2">Add Furniture Item</h2>
+                      <p className="text-gray-600 text-sm">Share a furniture item with your partner</p>
+                    </div>
+                    
                     {isLoading ? (
                       <LoadingSpinner />
                     ) : showSuccess ? (
                       <ProductAddedMessage />
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Product URL</label>
+                          <label className="block text-sm font-semibold mb-2 text-gray-700">Product URL</label>
                           <Input
                             type="url"
                             placeholder="https://example.com/furniture-item"
                             value={newProductUrl}
                             onChange={(e) => setNewProductUrl(e.target.value)}
-                            className="w-full h-10"
+                            className="w-full h-12 border-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base"
                           />
+                          <p className="text-xs text-gray-500 mt-1">Paste a link to any furniture item you'd like to share</p>
                         </div>
                         <Button
                           onClick={addProduct}
                           disabled={!newProductUrl.trim() || isLoading}
-                          className="w-full h-10"
+                          className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-lg"
                           size="sm"
                         >
-                          {isLoading ? "Adding..." : "Add Item"}
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Adding...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Item
+                            </>
+                          )}
                         </Button>
                       </div>
                     )}
@@ -1075,34 +1012,58 @@ export default function FurnitureMatcher() {
             )}
           </div>
 
-          {/* Bottom Navigation - Fixed */}
-          <div className="bg-white border-t shadow-lg flex-shrink-0 safe-area-bottom">
-            <div className="flex justify-center gap-1 p-2 max-w-sm mx-auto">
+          {/* Enhanced Bottom Navigation - Fixed */}
+          <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg flex-shrink-0 safe-area-bottom">
+            <div className="flex justify-center gap-2 p-3 max-w-sm mx-auto">
               <Button
-                variant={currentView === "swipe" ? "default" : "outline"}
+                variant={currentView === "swipe" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setCurrentView("swipe")}
-                className="flex-1 h-10 text-xs"
+                onClick={() => {
+                  setCurrentView("swipe")
+                  setShowSuccess(false)
+                  setRecentlyAddedProduct(null)
+                }}
+                className={`flex-1 h-12 text-sm font-medium transition-all duration-200 ${
+                  currentView === "swipe" 
+                    ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
+                    : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                }`}
               >
-                <Heart className="h-3 w-3 mr-1" />
+                <Heart className={`h-4 w-4 mr-2 ${currentView === "swipe" ? "text-white" : "text-gray-500"}`} />
                 Swipe
               </Button>
               <Button
-                variant={currentView === "add" ? "default" : "outline"}
+                variant={currentView === "add" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setCurrentView("add")}
-                className="flex-1 h-10 text-xs"
+                onClick={() => {
+                  setCurrentView("add")
+                  setShowSuccess(false)
+                  setRecentlyAddedProduct(null)
+                }}
+                className={`flex-1 h-12 text-sm font-medium transition-all duration-200 ${
+                  currentView === "add" 
+                    ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
+                    : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                }`}
               >
-                <Plus className="h-3 w-3 mr-1" />
+                <Plus className={`h-4 w-4 mr-2 ${currentView === "add" ? "text-white" : "text-gray-500"}`} />
                 Add Item
               </Button>
               <Button
-                variant={currentView === "matched" ? "default" : "outline"}
+                variant={currentView === "matched" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setCurrentView("matched")}
-                className="flex-1 h-10 text-xs"
+                onClick={() => {
+                  setCurrentView("matched")
+                  setShowSuccess(false)
+                  setRecentlyAddedProduct(null)
+                }}
+                className={`flex-1 h-12 text-sm font-medium transition-all duration-200 ${
+                  currentView === "matched" 
+                    ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
+                    : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                }`}
               >
-                <List className="h-3 w-3 mr-1" />
+                <List className={`h-4 w-4 mr-2 ${currentView === "matched" ? "text-white" : "text-gray-500"}`} />
                 Matches
               </Button>
             </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MessageCircle, Send, Edit, Trash2, X, Check } from "lucide-react"
+import { MessageCircle, Send, Edit, Trash2, X, Check, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -126,68 +126,84 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
     return userId === 'user1' ? '👨‍💻' : '👩‍💻'
   }
 
+  const getUserInitials = (userId: string) => {
+    return userId === 'user1' ? 'A' : 'M'
+  }
+
   return (
     <div className="space-y-3">
-      {/* Comments Toggle Button */}
+      {/* Enhanced Comments Toggle Button */}
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={() => setShowComments(!showComments)}
-        className="w-full h-8 text-xs"
+        className="w-full h-8 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 border border-purple-200 hover:border-purple-300"
         disabled={isInitialLoading}
       >
-        <MessageCircle className="h-3 w-3 mr-1" />
-        Comments {isInitialLoading ? "..." : `(${comments.length})`}
+        <MessageCircle className="h-3 w-3 mr-2" />
+        <span className="font-medium">Comments</span>
+        <Badge variant="secondary" className="ml-2 text-xs bg-purple-100 text-purple-700">
+          {isInitialLoading ? "..." : comments.length}
+        </Badge>
       </Button>
 
       {showComments && (
-        <Card>
+        <Card className="border-0 bg-gray-50/50 backdrop-blur-sm">
           <CardContent className="p-3 space-y-3">
-            {/* Add Comment */}
+            {/* Enhanced Comment Input */}
             <div className="flex gap-2">
-              <Input
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                className="flex-1 h-8 text-xs"
-                disabled={isLoading || isInitialLoading}
-              />
+              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-medium text-purple-600">
+                  {getUserInitials(currentUserId)}
+                </span>
+              </div>
+              <div className="flex-1">
+                <Input
+                  placeholder="Share your thoughts..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                  className="border-0 bg-white focus:ring-2 focus:ring-purple-500 shadow-sm h-8 text-xs"
+                  disabled={isLoading || isInitialLoading}
+                />
+              </div>
               <Button
                 size="sm"
                 onClick={handleAddComment}
                 disabled={!newComment.trim() || isLoading || isInitialLoading}
-                className="h-8 px-2"
+                className="h-8 px-2 bg-purple-600 hover:bg-purple-700"
               >
                 <Send className="h-3 w-3" />
               </Button>
             </div>
 
-            {/* Comments List */}
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            {/* Enhanced Comments List */}
+            <div className="space-y-3 max-h-48 overflow-y-auto">
               {isInitialLoading ? (
-                <p className="text-xs text-gray-500 text-center py-2">
-                  Loading comments...
-                </p>
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                  <p className="text-xs text-gray-500">Loading comments...</p>
+                </div>
               ) : comments.length === 0 ? (
-                <p className="text-xs text-gray-500 text-center py-2">
-                  No comments yet. Be the first to comment!
-                </p>
+                <div className="text-center py-4">
+                  <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500">No comments yet. Be the first to comment!</p>
+                </div>
               ) : (
                 comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-2">
-                    <div className="flex-shrink-0">
-                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs">
-                        {getUserAvatar(comment.user_id)}
-                      </div>
+                  <div key={comment.id} className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-gray-600">
+                        {getUserInitials(comment.user_id)}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 bg-white rounded-lg p-3 shadow-sm border border-gray-100">
                       {editingCommentId === comment.id ? (
                         <div className="space-y-2">
                           <Input
                             value={editingContent}
                             onChange={(e) => setEditingContent(e.target.value)}
-                            className="h-6 text-xs"
+                            className="h-6 text-xs border-gray-200 focus:ring-2 focus:ring-purple-500"
                             autoFocus
                           />
                           <div className="flex gap-1">
@@ -195,7 +211,7 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                               size="sm"
                               onClick={() => handleEditComment(comment.id)}
                               disabled={isLoading}
-                              className="h-6 px-2"
+                              className="h-6 px-2 bg-green-600 hover:bg-green-700"
                             >
                               <Check className="h-3 w-3" />
                             </Button>
@@ -211,8 +227,8 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                         </div>
                       ) : (
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xs font-semibold text-gray-800">
                               {getUserDisplayName(comment.user_id)}
                             </span>
                             <span className="text-xs text-gray-500">
@@ -224,7 +240,7 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => startEditing(comment)}
-                                  className="h-4 w-4 p-0 text-gray-400 hover:text-gray-600"
+                                  className="h-4 w-4 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
@@ -232,7 +248,7 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteComment(comment.id)}
-                                  className="h-4 w-4 p-0 text-red-400 hover:text-red-600"
+                                  className="h-4 w-4 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>

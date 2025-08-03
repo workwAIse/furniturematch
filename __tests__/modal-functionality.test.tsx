@@ -136,6 +136,6 @@ describe('Modal Functionality', () => {
     const chairImage = screen.getByAltText('Test Chair')
     
     // Check that the image has the correct CSS classes for clickability
-    expect(chairImage).toHaveClass('cursor-pointer', 'hover:opacity-90', 'transition-opacity')
+    expect(chairImage).toHaveClass('cursor-pointer', 'hover:opacity-90', 'transition-all')
   })
 }) 
