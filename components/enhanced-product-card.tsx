@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ProductComments } from "@/components/product-comments"
+import { ProductTypeBadge } from "@/components/product-type-badge"
+import { ProductTypeEditor } from "@/components/product-type-editor"
 import type { Product } from "@/lib/supabase"
 
 interface EnhancedProductCardProps {
@@ -14,6 +16,7 @@ interface EnhancedProductCardProps {
   onViewProduct: (url: string, title: string) => void
   onDelete?: (productId: string) => void
   onSwipe?: (productId: string, liked: boolean) => void
+  onTypeChange?: (productId: string, newType: string) => void
   variant?: "compact" | "detailed" | "swipe"
   showActions?: boolean
   className?: string
@@ -25,6 +28,7 @@ export function EnhancedProductCard({
   onViewProduct,
   onDelete,
   onSwipe,
+  onTypeChange,
   variant = "detailed",
   showActions = true,
   className = ""
@@ -86,7 +90,34 @@ export function EnhancedProductCard({
 
   if (variant === "compact") {
     return (
-      <Card className={`group hover:shadow-lg transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm ${className}`}>
+      <Card className={`group hover:shadow-lg transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm relative ${className}`}>
+        {/* Status indicator triangle overlay - positioned relative to card */}
+        <div className={`absolute top-0 left-0 w-10 h-10 z-10 ${
+          isMatch 
+            ? 'bg-green-500' 
+            : hasSwiped 
+              ? liked 
+                ? 'bg-green-500' 
+                : 'bg-red-500'
+              : 'bg-yellow-500'
+        }`} style={{
+          clipPath: 'polygon(0 0, 100% 0, 0 100%)'
+        }}>
+          <div className="absolute top-1 left-1 flex items-center justify-center w-5 h-5">
+            {isMatch ? (
+              <CheckCircle className="h-3.5 w-3.5 text-white" />
+            ) : hasSwiped ? (
+              liked ? (
+                <CheckCircle className="h-3.5 w-3.5 text-white" />
+              ) : (
+                <X className="h-3.5 w-3.5 text-white" />
+              )
+            ) : (
+              <Clock className="h-3.5 w-3.5 text-white" />
+            )}
+          </div>
+        </div>
+
         <CardContent className="p-4">
           <div className="flex gap-4">
             {/* Image Section */}
@@ -101,12 +132,6 @@ export function EnhancedProductCard({
                   e.currentTarget.src = "/placeholder.svg?height=80&width=80&query=furniture"
                 }}
               />
-              {/* Match indicator overlay */}
-              {isMatch && (
-                <div className="absolute -top-1 -right-1 bg-purple-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-                  <CheckCircle className="h-3 w-3" />
-                </div>
-              )}
             </div>
 
             {/* Content Section */}
@@ -120,6 +145,21 @@ export function EnhancedProductCard({
                   <p className="text-xs text-gray-500 mt-1 line-clamp-1">
                     {product.retailer}
                   </p>
+                  <div className="mt-2">
+                    {onTypeChange ? (
+                      <ProductTypeEditor
+                        productId={product.id}
+                        currentType={product.product_type}
+                        onTypeChange={(newType) => onTypeChange(product.id, newType)}
+                      />
+                    ) : (
+                      <ProductTypeBadge 
+                        productType={product.product_type} 
+                        variant="compact" 
+                        className="bg-purple-100 text-purple-800 border-purple-200 font-bold text-xs px-2.5 py-1 shadow-sm"
+                      />
+                    )}
+                  </div>
                 </div>
                 {onDelete && isOwner && (
                   <Button
@@ -148,18 +188,7 @@ export function EnhancedProductCard({
                     </span>
                   )}
                   
-                  {/* Status indicator - simplified */}
-                  {!isMatch && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      hasSwiped 
-                        ? liked 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {hasSwiped ? (liked ? 'Liked' : 'Disliked') : 'Pending'}
-                    </span>
-                  )}
+
                 </div>
 
                 {/* Action buttons */}
@@ -212,7 +241,34 @@ export function EnhancedProductCard({
 
   // Detailed variant (default)
   return (
-    <Card className={`group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-sm overflow-hidden ${className}`}>
+    <Card className={`group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-sm overflow-hidden relative ${className}`}>
+      {/* Status indicator triangle overlay - positioned relative to card */}
+      <div className={`absolute top-0 left-0 w-16 h-16 z-10 ${
+        isMatch 
+          ? 'bg-green-500' 
+          : hasSwiped 
+            ? liked 
+              ? 'bg-green-500' 
+              : 'bg-red-500'
+            : 'bg-yellow-500'
+      }`} style={{
+        clipPath: 'polygon(0 0, 100% 0, 0 100%)'
+      }}>
+        <div className="absolute top-2 left-2 flex items-center justify-center w-8 h-8">
+          {isMatch ? (
+            <CheckCircle className="h-5 w-5 text-white" />
+          ) : hasSwiped ? (
+            liked ? (
+              <CheckCircle className="h-5 w-5 text-white" />
+            ) : (
+              <X className="h-5 w-5 text-white" />
+            )
+          ) : (
+            <Clock className="h-5 w-5 text-white" />
+          )}
+        </div>
+      </div>
+
       {/* Image Section with Enhanced Visual Appeal */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
         <img
@@ -225,13 +281,6 @@ export function EnhancedProductCard({
             e.currentTarget.src = "/placeholder.svg?height=400&width=300&query=furniture"
           }}
         />
-        
-        {/* Match indicator overlay */}
-        {isMatch && (
-          <div className="absolute top-3 right-3 bg-purple-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
-            <CheckCircle className="h-4 w-4" />
-          </div>
-        )}
         
         {/* Price Tag Overlay */}
         {product.price && (
@@ -270,6 +319,20 @@ export function EnhancedProductCard({
           <p className="text-sm text-gray-500">
             {product.retailer}
           </p>
+          <div className="mt-2">
+            {onTypeChange ? (
+              <ProductTypeEditor
+                productId={product.id}
+                currentType={product.product_type}
+                onTypeChange={(newType) => onTypeChange(product.id, newType)}
+              />
+            ) : (
+              <ProductTypeBadge 
+                productType={product.product_type} 
+                className="bg-purple-100 text-purple-800 border-purple-200 font-bold text-sm px-3 py-1.5 shadow-sm"
+              />
+            )}
+          </div>
         </div>
         
         {/* Description */}
@@ -277,27 +340,8 @@ export function EnhancedProductCard({
           {product.description}
         </p>
 
-        {/* Status and Actions */}
-        <div className="flex items-center justify-between pt-2">
-          {/* Status indicator - simplified */}
-          {!isMatch && (
-            <span className={`text-sm px-3 py-1.5 rounded-full ${
-              hasSwiped 
-                ? liked 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-red-100 text-red-700'
-                : 'bg-yellow-100 text-yellow-700'
-            }`}>
-              {hasSwiped ? (liked ? 'Liked' : 'Disliked') : 'Pending Review'}
-            </span>
-          )}
-          
-          {isMatch && (
-            <span className="text-sm px-3 py-1.5 rounded-full bg-purple-100 text-purple-700">
-              Match! ❤️
-            </span>
-          )}
-
+        {/* Actions */}
+        <div className="flex items-center justify-end pt-2">
           {/* Action buttons */}
           <div className="flex gap-2">
             <Button
