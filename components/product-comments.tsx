@@ -131,39 +131,39 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
   }
 
   return (
-    <div className="space-y-3">
-      {/* Enhanced Comments Toggle Button */}
+    <div className="space-y-2">
+      {/* Comments Toggle Button - More Subtle */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setShowComments(!showComments)}
-        className="w-full h-8 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 border border-purple-200 hover:border-purple-300"
+        className="w-full h-7 text-xs text-gray-500 hover:text-purple-600 hover:bg-purple-50 border-0"
         disabled={isInitialLoading}
       >
-        <MessageCircle className="h-3 w-3 mr-2" />
-        <span className="font-medium">Comments</span>
-        <Badge variant="secondary" className="ml-2 text-xs bg-purple-100 text-purple-700">
+        <MessageCircle className="h-3 w-3 mr-1" />
+        <span>Comments</span>
+        <span className="ml-2 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full text-xs">
           {isInitialLoading ? "..." : comments.length}
-        </Badge>
+        </span>
       </Button>
 
       {showComments && (
-        <Card className="border-0 bg-gray-50/50 backdrop-blur-sm">
-          <CardContent className="p-3 space-y-3">
-            {/* Enhanced Comment Input */}
+        <Card className="border-0 bg-gray-50/30 backdrop-blur-sm">
+          <CardContent className="p-3 space-y-2">
+            {/* Comment Input */}
             <div className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-medium text-purple-600">
+              <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-medium text-purple-600">
                   {getUserInitials(currentUserId)}
                 </span>
               </div>
               <div className="flex-1">
                 <Input
-                  placeholder="Share your thoughts..."
+                  placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
-                  className="border-0 bg-white focus:ring-2 focus:ring-purple-500 shadow-sm h-8 text-xs"
+                  className="border-0 bg-white focus:ring-1 focus:ring-purple-500 shadow-sm h-7 text-xs"
                   disabled={isLoading || isInitialLoading}
                 />
               </div>
@@ -171,39 +171,39 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                 size="sm"
                 onClick={handleAddComment}
                 disabled={!newComment.trim() || isLoading || isInitialLoading}
-                className="h-8 px-2 bg-purple-600 hover:bg-purple-700"
+                className="h-7 px-2 bg-purple-600 hover:bg-purple-700"
               >
                 <Send className="h-3 w-3" />
               </Button>
             </div>
 
-            {/* Enhanced Comments List */}
-            <div className="space-y-3 max-h-48 overflow-y-auto">
+            {/* Comments List */}
+            <div className="space-y-2 max-h-40 overflow-y-auto">
               {isInitialLoading ? (
-                <div className="text-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
-                  <p className="text-xs text-gray-500">Loading comments...</p>
+                <div className="text-center py-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mx-auto mb-1"></div>
+                  <p className="text-xs text-gray-500">Loading...</p>
                 </div>
               ) : comments.length === 0 ? (
-                <div className="text-center py-4">
-                  <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">No comments yet. Be the first to comment!</p>
+                <div className="text-center py-3">
+                  <MessageCircle className="h-6 w-6 text-gray-300 mx-auto mb-1" />
+                  <p className="text-xs text-gray-500">No comments yet</p>
                 </div>
               ) : (
                 comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-gray-600">
+                  <div key={comment.id} className="flex gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-medium text-gray-600">
                         {getUserInitials(comment.user_id)}
                       </span>
                     </div>
-                    <div className="flex-1 bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                    <div className="flex-1 bg-white rounded-lg p-2 shadow-sm border border-gray-100">
                       {editingCommentId === comment.id ? (
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           <Input
                             value={editingContent}
                             onChange={(e) => setEditingContent(e.target.value)}
-                            className="h-6 text-xs border-gray-200 focus:ring-2 focus:ring-purple-500"
+                            className="h-6 text-xs border-gray-200 focus:ring-1 focus:ring-purple-500"
                             autoFocus
                           />
                           <div className="flex gap-1">
@@ -211,7 +211,7 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                               size="sm"
                               onClick={() => handleEditComment(comment.id)}
                               disabled={isLoading}
-                              className="h-6 px-2 bg-green-600 hover:bg-green-700"
+                              className="h-5 px-2 bg-green-600 hover:bg-green-700"
                             >
                               <Check className="h-3 w-3" />
                             </Button>
@@ -219,7 +219,7 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                               variant="outline"
                               size="sm"
                               onClick={cancelEditing}
-                              className="h-6 px-2"
+                              className="h-5 px-2"
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -227,20 +227,22 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                         </div>
                       ) : (
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-semibold text-gray-800">
-                              {getUserDisplayName(comment.user_id)}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {formatTime(comment.created_at)}
-                            </span>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-800 leading-relaxed">
+                                {comment.content}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {getUserDisplayName(comment.user_id)} • {formatTime(comment.created_at)}
+                              </p>
+                            </div>
                             {comment.user_id === currentUserId && (
-                              <div className="flex gap-1 ml-auto">
+                              <div className="flex gap-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => startEditing(comment)}
-                                  className="h-4 w-4 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                  className="h-5 w-5 p-0 text-gray-400 hover:text-blue-600"
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
@@ -248,16 +250,13 @@ export function ProductComments({ productId, currentUserId }: ProductCommentsPro
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteComment(comment.id)}
-                                  className="h-4 w-4 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
+                                  className="h-5 w-5 p-0 text-gray-400 hover:text-red-600"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             )}
                           </div>
-                          <p className="text-xs text-gray-700 leading-relaxed">
-                            {comment.content}
-                          </p>
                         </div>
                       )}
                     </div>
