@@ -30,52 +30,129 @@ const FURNITURE_TYPES = {
   SOFA: {
     id: 'sofa',
     name: 'Sofa',
-    keywords: ['sofa', 'couch', 'sofa', 'canapé', 'sofa bed', 'sofabett']
+    keywords: ['sofa', 'couch', 'canapé', 'sofa bed', 'sofabett', 'settee', 'divan']
   },
   TABLE: {
     id: 'table', 
     name: 'Table',
-    keywords: ['table', 'tisch', 'coffee table', 'couchtisch', 'dining table', 'esstisch', 'side table', 'beistelltisch']
+    keywords: ['table', 'tisch', 'coffee table', 'couchtisch', 'dining table', 'esstisch', 'side table', 'beistelltisch', 'end table', 'console table']
   },
   CHAIR: {
     id: 'chair',
     name: 'Chair', 
-    keywords: ['chair', 'stuhl', 'armchair', 'sessel', 'dining chair', 'esstuhl']
+    keywords: ['chair', 'stuhl', 'armchair', 'sessel', 'dining chair', 'esstuhl', 'office chair', 'recliner', 'rocking chair']
   },
   BED: {
     id: 'bed',
     name: 'Bed',
-    keywords: ['bed', 'bett', 'bed frame', 'bettgestell', 'mattress', 'matratze']
+    keywords: ['bed', 'bett', 'bed frame', 'bettgestell', 'mattress', 'matratze', 'platform bed', 'daybed']
   },
   LAMP: {
     id: 'lamp',
     name: 'Lamp',
-    keywords: ['lamp', 'lampe', 'ceiling lamp', 'deckenlampe', 'table lamp', 'tischlampe', 'floor lamp', 'stehlampe']
+    keywords: ['lamp', 'lampe', 'ceiling lamp', 'deckenlampe', 'table lamp', 'tischlampe', 'floor lamp', 'stehlampe', 'pendant lamp', 'wall lamp']
   },
   SHELF: {
     id: 'shelf',
     name: 'Shelf',
-    keywords: ['shelf', 'regal', 'bookshelf', 'bücherregal', 'wall shelf', 'wandregal']
+    keywords: ['shelf', 'regal', 'bookshelf', 'bücherregal', 'wall shelf', 'wandregal', 'floating shelf', 'corner shelf']
   },
   CABINET: {
     id: 'cabinet',
     name: 'Cabinet',
-    keywords: ['cabinet', 'schrank', 'wardrobe', 'kleiderschrank', 'dresser', 'kommode']
+    keywords: ['cabinet', 'schrank', 'kitchen cabinet', 'bathroom cabinet', 'curio cabinet', 'display cabinet']
   },
   DESK: {
     id: 'desk',
     name: 'Desk',
-    keywords: ['desk', 'schreibtisch', 'writing desk', 'computer desk']
+    keywords: ['desk', 'schreibtisch', 'writing desk', 'computer desk', 'office desk', 'study desk']
   },
   MIRROR: {
     id: 'mirror',
     name: 'Mirror',
-    keywords: ['mirror', 'spiegel', 'wall mirror', 'wandspiegel']
+    keywords: ['mirror', 'spiegel', 'wall mirror', 'wandspiegel', 'floor mirror', 'dressing mirror']
   },
   RUG: {
     id: 'rug',
     name: 'Rug',
-    keywords: ['rug', 'teppich', 'carpet', 'area rug']
+    keywords: ['rug', 'teppich', 'carpet', 'area rug', 'runner', 'doormat']
+  },
+  // NEW HIGH-PRIORITY CATEGORIES
+  OTTOMAN: {
+    id: 'ottoman',
+    name: 'Ottoman',
+    keywords: ['ottoman', 'footstool', 'pouf', 'hassock', 'footrest', 'hocker']
+  },
+  BENCH: {
+    id: 'bench',
+    name: 'Bench',
+    keywords: ['bench', 'bank', 'sitzbank', 'garden bench', 'entry bench', 'storage bench']
+  },
+  STOOL: {
+    id: 'stool',
+    name: 'Stool',
+    keywords: ['stool', 'bar stool', 'hocker', 'tabouret', 'kitchen stool', 'counter stool']
+  },
+  NIGHTSTAND: {
+    id: 'nightstand',
+    name: 'Nightstand',
+    keywords: ['nightstand', 'bedside table', 'nachttisch', 'bedside cabinet', 'bedside drawer']
+  },
+  DRESSER: {
+    id: 'dresser',
+    name: 'Dresser',
+    keywords: ['dresser', 'chest of drawers', 'kommode', 'commode', 'chest', 'drawer unit']
+  },
+  WARDROBE: {
+    id: 'wardrobe',
+    name: 'Wardrobe',
+    keywords: ['wardrobe', 'armoire', 'kleiderschrank', 'garderobe', 'closet', 'clothes cabinet']
+  },
+  BOOKCASE: {
+    id: 'bookcase',
+    name: 'Bookcase',
+    keywords: ['bookcase', 'bookshelf', 'bücherregal', 'library', 'book storage', 'display case']
+  },
+  TV_STAND: {
+    id: 'tv_stand',
+    name: 'TV Stand',
+    keywords: ['tv stand', 'tv unit', 'fernsehschrank', 'entertainment center', 'media console', 'tv cabinet']
+  },
+  SIDEBOARD: {
+    id: 'sideboard',
+    name: 'Sideboard',
+    keywords: ['sideboard', 'buffet', 'anrichte', 'credenza', 'server', 'dining storage']
+  },
+  PLANT_STAND: {
+    id: 'plant_stand',
+    name: 'Plant Stand',
+    keywords: ['plant stand', 'flower stand', 'pflanzenständer', 'plant holder', 'flower pot stand']
+  },
+  // MEDIUM-PRIORITY CATEGORIES
+  COAT_RACK: {
+    id: 'coat_rack',
+    name: 'Coat Rack',
+    keywords: ['coat rack', 'coat stand', 'garderobe', 'hall tree', 'hat stand', 'coat hanger']
+  },
+  WINE_RACK: {
+    id: 'wine_rack',
+    name: 'Wine Rack',
+    keywords: ['wine rack', 'weinregal', 'wine storage', 'wine holder', 'bottle rack']
+  },
+  UMBRELLA_STAND: {
+    id: 'umbrella_stand',
+    name: 'Umbrella Stand',
+    keywords: ['umbrella stand', 'schirmständer', 'umbrella holder', 'parasol stand']
+  },
+  MAGAZINE_RACK: {
+    id: 'magazine_rack',
+    name: 'Magazine Rack',
+    keywords: ['magazine rack', 'zeitschriftenhalter', 'newspaper holder', 'magazine holder']
+  },
+  SHOE_RACK: {
+    id: 'shoe_rack',
+    name: 'Shoe Rack',
+    keywords: ['shoe rack', 'schuhregal', 'shoe storage', 'shoe organizer', 'boot rack']
   }
 }
 ```
@@ -95,16 +172,31 @@ CREATE TABLE product_types (
 
 -- Insert predefined product types
 INSERT INTO product_types (id, name, keywords) VALUES
-('sofa', 'Sofa', ARRAY['sofa', 'couch', 'canapé', 'sofa bed', 'sofabett']),
-('table', 'Table', ARRAY['table', 'tisch', 'coffee table', 'couchtisch', 'dining table', 'esstisch']),
-('chair', 'Chair', ARRAY['chair', 'stuhl', 'armchair', 'sessel', 'dining chair', 'esstuhl']),
-('bed', 'Bed', ARRAY['bed', 'bett', 'bed frame', 'bettgestell', 'mattress', 'matratze']),
-('lamp', 'Lamp', ARRAY['lamp', 'lampe', 'ceiling lamp', 'deckenlampe', 'table lamp', 'tischlampe']),
-('shelf', 'Shelf', ARRAY['shelf', 'regal', 'bookshelf', 'bücherregal', 'wall shelf', 'wandregal']),
-('cabinet', 'Cabinet', ARRAY['cabinet', 'schrank', 'wardrobe', 'kleiderschrank', 'dresser', 'kommode']),
-('desk', 'Desk', ARRAY['desk', 'schreibtisch', 'writing desk', 'computer desk']),
-('mirror', 'Mirror', ARRAY['mirror', 'spiegel', 'wall mirror', 'wandspiegel']),
-('rug', 'Rug', ARRAY['rug', 'teppich', 'carpet', 'area rug']),
+('sofa', 'Sofa', ARRAY['sofa', 'couch', 'canapé', 'sofa bed', 'sofabett', 'settee', 'divan']),
+('table', 'Table', ARRAY['table', 'tisch', 'coffee table', 'couchtisch', 'dining table', 'esstisch', 'side table', 'beistelltisch', 'end table', 'console table']),
+('chair', 'Chair', ARRAY['chair', 'stuhl', 'armchair', 'sessel', 'dining chair', 'esstuhl', 'office chair', 'recliner', 'rocking chair']),
+('bed', 'Bed', ARRAY['bed', 'bett', 'bed frame', 'bettgestell', 'mattress', 'matratze', 'platform bed', 'daybed']),
+('lamp', 'Lamp', ARRAY['lamp', 'lampe', 'ceiling lamp', 'deckenlampe', 'table lamp', 'tischlampe', 'floor lamp', 'stehlampe', 'pendant lamp', 'wall lamp']),
+('shelf', 'Shelf', ARRAY['shelf', 'regal', 'bookshelf', 'bücherregal', 'wall shelf', 'wandregal', 'floating shelf', 'corner shelf']),
+('cabinet', 'Cabinet', ARRAY['cabinet', 'schrank', 'kitchen cabinet', 'bathroom cabinet', 'curio cabinet', 'display cabinet']),
+('desk', 'Desk', ARRAY['desk', 'schreibtisch', 'writing desk', 'computer desk', 'office desk', 'study desk']),
+('mirror', 'Mirror', ARRAY['mirror', 'spiegel', 'wall mirror', 'wandspiegel', 'floor mirror', 'dressing mirror']),
+('rug', 'Rug', ARRAY['rug', 'teppich', 'carpet', 'area rug', 'runner', 'doormat']),
+('ottoman', 'Ottoman', ARRAY['ottoman', 'footstool', 'pouf', 'hassock', 'footrest', 'hocker']),
+('bench', 'Bench', ARRAY['bench', 'bank', 'sitzbank', 'garden bench', 'entry bench', 'storage bench']),
+('stool', 'Stool', ARRAY['stool', 'bar stool', 'hocker', 'tabouret', 'kitchen stool', 'counter stool']),
+('nightstand', 'Nightstand', ARRAY['nightstand', 'bedside table', 'nachttisch', 'bedside cabinet', 'bedside drawer']),
+('dresser', 'Dresser', ARRAY['dresser', 'chest of drawers', 'kommode', 'commode', 'chest', 'drawer unit']),
+('wardrobe', 'Wardrobe', ARRAY['wardrobe', 'armoire', 'kleiderschrank', 'garderobe', 'closet', 'clothes cabinet']),
+('bookcase', 'Bookcase', ARRAY['bookcase', 'bookshelf', 'bücherregal', 'library', 'book storage', 'display case']),
+('tv_stand', 'TV Stand', ARRAY['tv stand', 'tv unit', 'fernsehschrank', 'entertainment center', 'media console', 'tv cabinet']),
+('sideboard', 'Sideboard', ARRAY['sideboard', 'buffet', 'anrichte', 'credenza', 'server', 'dining storage']),
+('plant_stand', 'Plant Stand', ARRAY['plant stand', 'flower stand', 'pflanzenständer', 'plant holder', 'flower pot stand']),
+('coat_rack', 'Coat Rack', ARRAY['coat rack', 'coat stand', 'garderobe', 'hall tree', 'hat stand', 'coat hanger']),
+('wine_rack', 'Wine Rack', ARRAY['wine rack', 'weinregal', 'wine storage', 'wine holder', 'bottle rack']),
+('umbrella_stand', 'Umbrella Stand', ARRAY['umbrella stand', 'schirmständer', 'umbrella holder', 'parasol stand']),
+('magazine_rack', 'Magazine Rack', ARRAY['magazine rack', 'zeitschriftenhalter', 'newspaper holder', 'magazine holder']),
+('shoe_rack', 'Shoe Rack', ARRAY['shoe rack', 'schuhregal', 'shoe storage', 'shoe organizer', 'boot rack']),
 ('other', 'Other', ARRAY[]);
 ```
 
@@ -351,19 +443,6 @@ const MatchingInsights = () => {
 3. **Machine Learning**: Train models on categorized data
 4. **Caching**: Cache detection results
 
-## 🔄 Future Enhancements
-
-### Phase 2 Features
-- [ ] Product type preferences for users
-- [ ] Type-based matching algorithms
-- [ ] Advanced filtering (multiple types, exclusions)
-- [ ] Type-based recommendations
-
-### Phase 3 Features
-- [ ] Machine learning for better detection
-- [ ] User feedback for improving accuracy
-- [ ] Custom product type definitions
-- [ ] Type-based analytics and insights
 
 ## 📝 Notes
 
