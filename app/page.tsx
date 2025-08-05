@@ -224,7 +224,9 @@ export default function FurnitureMatcher() {
         price: productInfo.price,
         retailer: productInfo.retailer,
         uploaded_by: databaseUserId,
-        swipes: {},
+        swipes: {
+          [databaseUserId]: true // Creator automatically likes their own product
+        },
       }
 
       console.log(`[ADD_PRODUCT] New product being added:`, {
@@ -271,7 +273,9 @@ export default function FurnitureMatcher() {
         title: "Furniture Item",
         description: "Product added manually - information extraction failed",
         uploaded_by: databaseUserId,
-        swipes: {},
+        swipes: {
+          [databaseUserId]: true // Creator automatically likes their own product
+        },
       }
 
       console.log(`[ADD_PRODUCT] Adding fallback product due to error:`, {

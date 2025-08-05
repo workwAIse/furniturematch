@@ -16,6 +16,8 @@ Any changes you make to your deployed app will be automatically pushed to this r
 - **Swipe Interface**: Tinder-like interface for reviewing furniture items
 - **Product Management**: Add furniture items via URL with automatic information extraction
 - **Matching System**: Track swipes and celebrate when both users like the same item
+- **Automatic Creator Approval**: When a user adds a product, they automatically "like" it
+- **Review Workflow**: Partner must review and swipe on items to create matches
 - **Iframe Browsing**: Browse product pages directly within the app using iframe modals
 
 ### 🔗 Iframe Product Browsing
