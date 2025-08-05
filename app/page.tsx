@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Plus, Heart, X, List, Users, ArrowLeft, Loader2, LogOut, Check, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,9 @@ import Confetti from "@/components/confetti"
 import { IframeModal } from "@/components/iframe-modal"
 import { ProductComments } from "@/components/product-comments"
 import { EnhancedProductCard } from "@/components/enhanced-product-card"
+import { ProductTypeDetector } from "@/lib/product-type-detector"
+import { ProductTypeBadge } from "@/components/product-type-badge"
+import { UnifiedFilter } from "@/components/unified-filter"
 
 interface SwipeGesture {
   startX: number
@@ -45,6 +48,16 @@ export default function FurnitureMatcher() {
   const [recentlyAddedProduct, setRecentlyAddedProduct] = useState<Product | null>(null)
   const [showMatch, setShowMatch] = useState(false)
   const [lastSwipeTime, setLastSwipeTime] = useState(0)
+  // Separate filter states for each tab
+  const [matchesProductType, setMatchesProductType] = useState<string | null>(null)
+  const [matchesOwner, setMatchesOwner] = useState<'all' | 'me' | 'partner'>('all')
+  const [yoursProductType, setYoursProductType] = useState<string | null>(null)
+  const [yoursState, setYoursState] = useState<'all' | 'match' | 'rejected' | 'pending'>('all')
+  const [partnersProductType, setPartnersProductType] = useState<string | null>(null)
+  const [partnersState, setPartnersState] = useState<'all' | 'match' | 'rejected' | 'pending'>('all')
+  
+  // Active tab state
+  const [activeTab, setActiveTab] = useState<'matches' | 'yours' | 'partners'>('matches')
   const [swipeGesture, setSwipeGesture] = useState<SwipeGesture>({
     startX: 0,
     startY: 0,
@@ -66,6 +79,16 @@ export default function FurnitureMatcher() {
       try {
         const products = await DatabaseService.getProducts()
         setProducts(products)
+        
+        // One-time migration: update product types for existing products
+        try {
+          await DatabaseService.updateProductTypes()
+          // Reload products after migration
+          const updatedProducts = await DatabaseService.getProducts()
+          setProducts(updatedProducts)
+        } catch (migrationError) {
+          console.error('Error during product type migration:', migrationError)
+        }
       } catch (error) {
         console.error('Error loading products:', error)
       }
@@ -112,6 +135,7 @@ export default function FurnitureMatcher() {
         description: data.description || "No description available",
         price: data.price || undefined,
         retailer: data.retailer || "Unknown",
+        product_type: ProductTypeDetector.detectProductType(url, data.title || "", data.description || ""),
       }
       
       console.log(`[EXTRACT_PRODUCT] Successfully extracted product info:`, {
@@ -174,6 +198,7 @@ export default function FurnitureMatcher() {
           title,
           description: `Product from ${retailer}. Automatic extraction failed, but you can still add this item.`,
           retailer,
+          product_type: ProductTypeDetector.detectProductType(url, title, `Product from ${retailer}`),
         }
         
         console.log(`[EXTRACT_PRODUCT] Fallback extraction successful:`, fallbackResult)
@@ -191,6 +216,7 @@ export default function FurnitureMatcher() {
           title: "Furniture Item",
           description: "Product information could not be extracted. Please check the URL and try again.",
           retailer: "Unknown",
+          product_type: "other",
         }
         
         console.log(`[EXTRACT_PRODUCT] Using final fallback:`, finalFallback)
@@ -223,6 +249,7 @@ export default function FurnitureMatcher() {
         description: productInfo.description || "No description available",
         price: productInfo.price,
         retailer: productInfo.retailer,
+        product_type: productInfo.product_type || "other",
         uploaded_by: databaseUserId,
         swipes: {
           [databaseUserId]: true // Creator automatically likes their own product
@@ -272,6 +299,7 @@ export default function FurnitureMatcher() {
         image: `/placeholder.svg?height=400&width=300&query=furniture`,
         title: "Furniture Item",
         description: "Product added manually - information extraction failed",
+        product_type: "other",
         uploaded_by: databaseUserId,
         swipes: {
           [databaseUserId]: true // Creator automatically likes their own product
@@ -409,6 +437,128 @@ export default function FurnitureMatcher() {
     return databaseUserId === 'user1' ? 'user2' : 'user1'
   }
 
+  // Helper function to determine product state
+  const getProductState = (product: Product, currentUserId: string): 'match' | 'rejected' | 'pending' => {
+    const otherUserId = currentUserId === 'user1' ? 'user2' : 'user1'
+    
+    // Check if it's a match (both users like the same product)
+    const isMatch = (product.uploaded_by === currentUserId && product.swipes[otherUserId] === true) ||
+                   (product.uploaded_by === otherUserId && product.swipes[currentUserId] === true)
+    
+    if (isMatch) {
+      return 'match'
+    }
+    
+    // Check if current user has swiped
+    const hasSwiped = product.swipes[currentUserId] !== undefined
+    if (hasSwiped) {
+      return product.swipes[currentUserId] === true ? 'match' : 'rejected'
+    }
+    
+    return 'pending'
+  }
+
+  // Filter products by state
+  const filterProductsByState = (products: Product[], state: 'all' | 'match' | 'rejected' | 'pending', currentUserId: string) => {
+    if (state === 'all') return products
+    
+    return products.filter(product => {
+      const productState = getProductState(product, currentUserId)
+      return productState === state
+    })
+  }
+
+  // Product filtering functions
+  const getFilteredProducts = () => {
+    let filtered = products
+    
+    // This function is used for the swipe view, so we'll use matches filters
+    // Filter by owner
+    if (matchesOwner !== 'all') {
+      const databaseUserId = mapUserToDatabaseId(user?.email || "")
+      if (matchesOwner === 'me') {
+        filtered = filtered.filter(product => product.uploaded_by === databaseUserId)
+      } else if (matchesOwner === 'partner') {
+        filtered = filtered.filter(product => product.uploaded_by !== databaseUserId)
+      }
+    }
+    
+    // Filter by product type
+    if (matchesProductType) {
+      filtered = filtered.filter(product => product.product_type === matchesProductType)
+    }
+    
+    return filtered
+  }
+
+  const getFilteredMatches = () => {
+    const matches = getMatchedProducts()
+    let filtered = matches
+    
+    // Filter by owner
+    if (matchesOwner !== 'all') {
+      const databaseUserId = mapUserToDatabaseId(user?.email || "")
+      if (matchesOwner === 'me') {
+        filtered = filtered.filter(product => product.uploaded_by === databaseUserId)
+      } else if (matchesOwner === 'partner') {
+        filtered = filtered.filter(product => product.uploaded_by !== databaseUserId)
+      }
+    }
+    
+    // Filter by product type
+    if (matchesProductType) {
+      filtered = filtered.filter(product => product.product_type === matchesProductType)
+    }
+    
+    return filtered
+  }
+
+  // Context-aware filtering functions
+  const getContextualProductTypes = (productList: Product[]) => {
+    const typeCounts: Record<string, number> = {}
+    productList.forEach(product => {
+      typeCounts[product.product_type] = (typeCounts[product.product_type] || 0) + 1
+    })
+    return typeCounts
+  }
+
+  const getContextualMatchingTypes = (productList: Product[]) => {
+    const user1Types = getYourProducts().map(p => p.product_type)
+    const user2Types = getPartnerProducts().map(p => p.product_type)
+    const commonTypes = user1Types.filter(type => user2Types.includes(type))
+    
+    // Only return types that exist in the current product list
+    return commonTypes.filter(type => 
+      productList.some(product => product.product_type === type)
+    )
+  }
+
+  const getContextualTypeStats = (productList: Product[]) => {
+    const stats: Record<string, number> = {}
+    productList.forEach(product => {
+      stats[product.product_type] = (stats[product.product_type] || 0) + 1
+    })
+    return stats
+  }
+
+  // Product type statistics
+  const getProductTypeStats = () => {
+    const stats: Record<string, number> = {}
+    const matches = getMatchedProducts()
+    
+    matches.forEach(product => {
+      stats[product.product_type] = (stats[product.product_type] || 0) + 1
+    })
+    
+    return stats
+  }
+
+  const getMatchingProductTypes = () => {
+    const user1Types = getYourProducts().map(p => p.product_type)
+    const user2Types = getPartnerProducts().map(p => p.product_type)
+    return user1Types.filter(type => user2Types.includes(type))
+  }
+
   // Iframe handlers
   const openIframe = (url: string, productTitle?: string) => {
     setIframeState({
@@ -461,6 +611,31 @@ export default function FurnitureMatcher() {
     } catch (error) {
       console.error('Error deleting product:', error)
       alert('Failed to delete product. Please try again.')
+    }
+  }
+
+  const handleProductTypeChange = async (productId: string, newType: string) => {
+    try {
+      // Update local state immediately for better UX
+      setProducts((prev) => 
+        prev.map((product) => 
+          product.id === productId 
+            ? { ...product, product_type: newType }
+            : product
+        )
+      )
+      
+      console.log(`Product ${productId} type updated to ${newType}`)
+    } catch (error) {
+      console.error('Error updating product type:', error)
+      // Revert the local state change on error
+      setProducts((prev) => 
+        prev.map((product) => 
+          product.id === productId 
+            ? { ...product, product_type: product.product_type }
+            : product
+        )
+      )
     }
   }
 
@@ -805,41 +980,97 @@ export default function FurnitureMatcher() {
     </div>
   )
 
-  const MatchesView = () => (
-    <div className="max-w-sm mx-auto h-full overflow-hidden flex flex-col">
-      <Tabs defaultValue="matches" className="w-full h-full flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mb-4 flex-shrink-0 bg-gray-100 p-1 rounded-lg">
-          <TabsTrigger 
-            value="matches" 
-            className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
-          >
-            Matches ({matchedProducts.length})
-          </TabsTrigger>
-          <TabsTrigger 
-            value="yours" 
-            className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
-          >
-            Yours ({getYourProducts().length})
-          </TabsTrigger>
-          <TabsTrigger 
-            value="partners" 
-            className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
-          >
-            Partners ({getPartnerProducts().length})
-          </TabsTrigger>
-        </TabsList>
+  const MatchesView = () => {
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+    const filteredMatches = useMemo(() => getFilteredMatches(), [products, matchesProductType, matchesOwner])
+    
+    // Context-aware data for matches tab
+    const matchesProductTypes = useMemo(() => getContextualProductTypes(filteredMatches), [filteredMatches])
+    
+    // Filtered products for each tab
+    const filteredYourProducts = useMemo(() => {
+      let filtered = getYourProducts()
+      if (yoursProductType) {
+        filtered = filtered.filter(product => product.product_type === yoursProductType)
+      }
+      if (yoursState !== 'all') {
+        filtered = filterProductsByState(filtered, yoursState, mapUserToDatabaseId(user?.email || ""))
+      }
+      return filtered
+    }, [products, yoursProductType, yoursState, user?.email])
+    
+    const filteredPartnerProducts = useMemo(() => {
+      let filtered = getPartnerProducts()
+      if (partnersProductType) {
+        filtered = filtered.filter(product => product.product_type === partnersProductType)
+      }
+      if (partnersState !== 'all') {
+        filtered = filterProductsByState(filtered, partnersState, mapUserToDatabaseId(user?.email || ""))
+      }
+      return filtered
+    }, [products, partnersProductType, partnersState, user?.email])
+    
+    // Preserve scroll position when products change
+    useEffect(() => {
+      if (scrollContainerRef.current) {
+        const scrollTop = scrollContainerRef.current.scrollTop
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollTop
+          }
+        })
+      }
+    }, [products])
+    
+    return (
+      <div className="max-w-sm mx-auto h-full overflow-hidden flex flex-col">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'matches' | 'yours' | 'partners')} className="w-full h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-3 mb-4 flex-shrink-0 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger 
+              value="matches" 
+              className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
+            >
+              Matches ({filteredMatches.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="yours" 
+              className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
+            >
+              Yours ({filteredYourProducts.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="partners" 
+              className="text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-sm"
+            >
+              Partners ({filteredPartnerProducts.length})
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" ref={scrollContainerRef}>
           <TabsContent value="matches" className="space-y-4 mt-0 pb-4">
-            {matchedProducts.length > 0 ? (
+            {filteredMatches.length > 0 ? (
               <div className="space-y-4">
-                {matchedProducts.map((product) => (
+                {/* Unified Filter */}
+                <UnifiedFilter
+                  selectedType={matchesProductType}
+                  onTypeChange={setMatchesProductType}
+                  selectedOwner={matchesOwner}
+                  onOwnerChange={setMatchesOwner}
+                  context="matches"
+                  availableProductTypes={matchesProductTypes}
+                  className="mb-4 p-3 bg-gray-50 rounded-lg"
+                />
+                
+                {/* Filtered Products */}
+                {filteredMatches.map((product) => (
                   <EnhancedProductCard
                     key={product.id}
                     product={product}
                     currentUserId={mapUserToDatabaseId(user?.email || "")}
                     onViewProduct={openIframe}
                     onDelete={handleDeleteProduct}
+                    onTypeChange={handleProductTypeChange}
                     variant="compact"
                     showActions={true}
                   />
@@ -848,25 +1079,48 @@ export default function FurnitureMatcher() {
             ) : (
               <div className="text-center py-8">
                 <div className="text-5xl mb-3">💕</div>
-                <h3 className="text-base font-semibold mb-2">No matches yet</h3>
-                <p className="text-gray-600 px-4 text-sm">Keep swiping to find items you both love!</p>
+                <h3 className="text-base font-semibold mb-2">
+                  {matchesProductType ? 'No matches for this type' : 'No matches yet'}
+                </h3>
+                <p className="text-gray-600 px-4 text-sm">
+                  {matchesProductType 
+                    ? 'Try selecting a different product type or keep swiping to find more matches!'
+                    : 'Keep swiping to find items you both love!'
+                  }
+                </p>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="yours" className="space-y-4 mt-0 pb-4">
-            {getYourProducts().length > 0 ? (
-              getYourProducts().map((product) => (
-                <EnhancedProductCard
-                  key={product.id}
-                  product={product}
-                  currentUserId={mapUserToDatabaseId(user?.email || "")}
-                  onViewProduct={openIframe}
-                  onDelete={handleDeleteProduct}
-                  variant="compact"
-                  showActions={true}
+            {filteredYourProducts.length > 0 ? (
+              <div className="space-y-4">
+                {/* Unified Filter for Yours tab */}
+                <UnifiedFilter
+                  selectedType={yoursProductType}
+                  onTypeChange={setYoursProductType}
+                  selectedOwner="all"
+                  onOwnerChange={() => {}} // No-op since owner filter doesn't apply to "yours" tab
+                  selectedState={yoursState}
+                  onStateChange={setYoursState}
+                  context="yours"
+                  availableProductTypes={getContextualProductTypes(filteredYourProducts)}
+                  className="mb-4 p-3 bg-gray-50 rounded-lg"
                 />
-              ))
+                
+                                {filteredYourProducts.map((product) => (
+                  <EnhancedProductCard
+                    key={product.id}
+                    product={product}
+                    currentUserId={mapUserToDatabaseId(user?.email || "")}
+                    onViewProduct={openIframe}
+                    onDelete={handleDeleteProduct}
+                    onTypeChange={handleProductTypeChange}
+                    variant="compact"
+                    showActions={true}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="text-center py-8">
                 <div className="text-5xl mb-3">📦</div>
@@ -877,18 +1131,34 @@ export default function FurnitureMatcher() {
           </TabsContent>
 
           <TabsContent value="partners" className="space-y-4 mt-0 pb-4">
-            {getPartnerProducts().length > 0 ? (
-              getPartnerProducts().map((product) => (
-                <EnhancedProductCard
-                  key={product.id}
-                  product={product}
-                  currentUserId={mapUserToDatabaseId(user?.email || "")}
-                  onViewProduct={openIframe}
-                  onSwipe={handleSwipe}
-                  variant="compact"
-                  showActions={true}
+            {filteredPartnerProducts.length > 0 ? (
+              <div className="space-y-4">
+                {/* Unified Filter for Partners tab */}
+                <UnifiedFilter
+                  selectedType={partnersProductType}
+                  onTypeChange={setPartnersProductType}
+                  selectedOwner="all"
+                  onOwnerChange={() => {}} // No-op since owner filter doesn't apply to "partners" tab
+                  selectedState={partnersState}
+                  onStateChange={setPartnersState}
+                  context="partners"
+                  availableProductTypes={getContextualProductTypes(filteredPartnerProducts)}
+                  className="mb-4 p-3 bg-gray-50 rounded-lg"
                 />
-              ))
+                
+                                {filteredPartnerProducts.map((product) => (
+                  <EnhancedProductCard
+                    key={product.id}
+                    product={product}
+                    currentUserId={mapUserToDatabaseId(user?.email || "")}
+                    onViewProduct={openIframe}
+                    onSwipe={handleSwipe}
+                    onTypeChange={handleProductTypeChange}
+                    variant="compact"
+                    showActions={true}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="text-center py-8">
                 <div className="text-5xl mb-3">👥</div>
@@ -901,6 +1171,7 @@ export default function FurnitureMatcher() {
       </Tabs>
     </div>
   )
+  }
 
   return (
     <ProtectedRoute>
