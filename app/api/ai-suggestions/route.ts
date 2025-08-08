@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AISuggestionService } from '@/lib/ai-suggestion-service'
 import { SearchService } from '@/lib/search-service'
-import { ScrapingService } from '@/lib/scraping-service'
 import { DatabaseService } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
@@ -47,15 +46,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ suggestions: [] })
     }
 
-    // Process each suggestion through search and scraping
-    console.log('[AI_SUGGESTIONS_API] Processing suggestions through search and scraping...')
+    // Process each suggestion through search (no scraping)
+    console.log('[AI_SUGGESTIONS_API] Processing suggestions through search...')
     const processedSuggestions = []
     
     for (const aiSuggestion of aiSuggestions) {
       try {
         console.log(`[AI_SUGGESTIONS_API] Processing suggestion: ${aiSuggestion.name} from ${aiSuggestion.retailer}`)
         
-        // Step 1: Search for product URL
+        // Step 1: Search for product URL only
         const productUrl = await SearchService.findProductURL(
           aiSuggestion.name,
           aiSuggestion.retailer,
@@ -67,18 +66,20 @@ export async function POST(request: NextRequest) {
           continue
         }
         
-        // Step 2: Scrape product details
-        const scrapedProduct = await ScrapingService.scrapeProduct(productUrl, aiSuggestion.retailer)
-        
-        // Step 3: Combine AI suggestion with scraped data
-        const fullSuggestion = {
-          ...scrapedProduct,
+        // Step 2: Create suggestion with URL only (no scraping)
+        const suggestion = {
+          title: aiSuggestion.name,
+          description: `AI-suggested ${aiSuggestion.category} from ${aiSuggestion.retailer}`,
+          image: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(aiSuggestion.name)}`,
+          price: undefined,
+          retailer: aiSuggestion.retailer,
+          url: productUrl,
           reasoning: aiSuggestion.reasoning,
           confidence: aiSuggestion.confidence
         }
         
-        processedSuggestions.push(fullSuggestion)
-        console.log(`[AI_SUGGESTIONS_API] Successfully processed: ${fullSuggestion.title}`)
+        processedSuggestions.push(suggestion)
+        console.log(`[AI_SUGGESTIONS_API] Successfully processed: ${suggestion.title}`)
         
       } catch (error) {
         console.error(`[AI_SUGGESTIONS_API] Failed to process suggestion ${aiSuggestion.name}:`, error)
