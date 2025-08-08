@@ -22,6 +22,7 @@ const mockProduct = {
   url: 'https://example.com/test-item',
   uploaded_by: 'user1',
   retailer: 'Test Store',
+  product_type: 'sofa',
   swipes: {},
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString()

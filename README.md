@@ -36,6 +36,24 @@ Any changes you make to your deployed app will be automatically pushed to this r
 - **Time Stamps**: Comments display relative time (e.g., "2h ago")
 - **Collapsible Interface**: Comments section can be expanded/collapsed to save space
 
+### 🏷️ Product Type Categories
+- **Automatic Categorization**: Products are automatically categorized into furniture types (sofa, table, chair, lamp, etc.)
+- **Smart Detection**: Uses keyword matching to detect product types from URLs, titles, and descriptions
+- **Multi-language Support**: Supports both English and German keywords for international retailers
+- **Visual Badges**: Product type badges are displayed on all product cards
+- **Manual Editing**: Click on the product type text to edit it directly
+- **One-time Migration**: Existing products are automatically categorized when the feature is first loaded
+
+### 🔍 Unified Filtering & Insights
+- **Chip-based Interface**: Modern chip-based filtering system for better UX
+- **Owner Filtering**: Filter by "Me", "Partner", or "All" to see who added each item
+- **Type Filtering**: Filter by product type using clickable chips
+- **Matching Insights**: Interactive chips show which furniture types you both like
+- **Statistics Display**: See counts of matched products by type
+- **Active Filter Display**: Clear visual indication of currently applied filters
+- **One-click Removal**: Remove filters with X buttons on active filter chips
+- **Interactive Insights**: Click on insight chips to apply them as filters
+
 ## Environment Setup
 
 To enable product scraping functionality, you need to set up the following environment variables:
@@ -96,6 +114,10 @@ The test suite verifies:
 - Correct URL and title display in modal
 - Modal closing functionality
 - Proper CSS classes for clickability and hover effects
+- Product type detection accuracy
+- UI component rendering and interactions
+- Filtering functionality
+- Matching insights display
 
 ### Testing the Iframe Feature
 
