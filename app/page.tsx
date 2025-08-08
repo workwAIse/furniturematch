@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Plus, Heart, X, List, Users, ArrowLeft, Loader2, LogOut, Check, Trash2 } from "lucide-react"
+import { Plus, Heart, X, List, Users, ArrowLeft, Loader2, LogOut, Check, Trash2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -20,6 +20,7 @@ import { EnhancedProductCard } from "@/components/enhanced-product-card"
 import { ProductTypeDetector } from "@/lib/product-type-detector"
 import { ProductTypeBadge } from "@/components/product-type-badge"
 import { UnifiedFilter } from "@/components/unified-filter"
+import { AISuggestionsTab } from "@/components/ai-suggestions-tab"
 
 interface SwipeGesture {
   startX: number
@@ -41,7 +42,7 @@ const mapUserToDatabaseId = (email: string): string => {
 export default function FurnitureMatcher() {
   const { user, signOut } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
-  const [currentView, setCurrentView] = useState<"swipe" | "matched" | "add">("swipe")
+  const [currentView, setCurrentView] = useState<"swipe" | "matched" | "add" | "ai-suggestions">("swipe")
   const [newProductUrl, setNewProductUrl] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -709,6 +710,11 @@ export default function FurnitureMatcher() {
     handleSwipe(productId, liked)
   }
 
+  const handleAddToCollection = (url: string) => {
+    setNewProductUrl(url)
+    setCurrentView("add")
+  }
+
   const productsToSwipe = getProductsToSwipe()
   const matchedProducts = getMatchedProducts()
 
@@ -1167,6 +1173,8 @@ export default function FurnitureMatcher() {
               </div>
             )}
           </TabsContent>
+
+
         </div>
       </Tabs>
     </div>
@@ -1277,6 +1285,8 @@ export default function FurnitureMatcher() {
 
             {currentView === "matched" && <MatchesView />}
 
+            {currentView === "ai-suggestions" && <AISuggestionsTab onViewProduct={openIframe} onAddToCollection={handleAddToCollection} />}
+
             {/* Match Celebration Overlay */}
             {showMatch && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1289,7 +1299,7 @@ export default function FurnitureMatcher() {
 
           {/* Enhanced Bottom Navigation - Fixed */}
           <div className="bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg flex-shrink-0 safe-area-bottom">
-            <div className="flex justify-center gap-2 p-3 max-w-sm mx-auto">
+            <div className="flex justify-center gap-0.5 p-2 max-w-sm mx-auto">
               <Button
                 variant={currentView === "swipe" ? "default" : "ghost"}
                 size="sm"
@@ -1298,13 +1308,13 @@ export default function FurnitureMatcher() {
                   setShowSuccess(false)
                   setRecentlyAddedProduct(null)
                 }}
-                className={`flex-1 h-12 text-sm font-medium transition-all duration-200 ${
+                className={`flex-1 h-12 text-xs font-medium transition-all duration-200 ${
                   currentView === "swipe" 
                     ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
                     : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
                 }`}
               >
-                <Heart className={`h-4 w-4 mr-2 ${currentView === "swipe" ? "text-white" : "text-gray-500"}`} />
+                <Heart className={`h-4 w-4 mr-1 ${currentView === "swipe" ? "text-white" : "text-gray-500"}`} />
                 Swipe
               </Button>
               <Button
@@ -1315,14 +1325,14 @@ export default function FurnitureMatcher() {
                   setShowSuccess(false)
                   setRecentlyAddedProduct(null)
                 }}
-                className={`flex-1 h-12 text-sm font-medium transition-all duration-200 ${
+                className={`flex-1 h-12 text-xs font-medium transition-all duration-200 ${
                   currentView === "add" 
                     ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
                     : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
                 }`}
               >
-                <Plus className={`h-4 w-4 mr-2 ${currentView === "add" ? "text-white" : "text-gray-500"}`} />
-                Add Item
+                <Plus className={`h-4 w-4 mr-1 ${currentView === "add" ? "text-white" : "text-gray-500"}`} />
+                Add
               </Button>
               <Button
                 variant={currentView === "matched" ? "default" : "ghost"}
@@ -1332,14 +1342,31 @@ export default function FurnitureMatcher() {
                   setShowSuccess(false)
                   setRecentlyAddedProduct(null)
                 }}
-                className={`flex-1 h-12 text-sm font-medium transition-all duration-200 ${
+                className={`flex-1 h-12 text-xs font-medium transition-all duration-200 ${
                   currentView === "matched" 
                     ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
                     : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
                 }`}
               >
-                <List className={`h-4 w-4 mr-2 ${currentView === "matched" ? "text-white" : "text-gray-500"}`} />
+                <List className={`h-4 w-4 mr-1 ${currentView === "matched" ? "text-white" : "text-gray-500"}`} />
                 Matches
+              </Button>
+              <Button
+                variant={currentView === "ai-suggestions" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  setCurrentView("ai-suggestions")
+                  setShowSuccess(false)
+                  setRecentlyAddedProduct(null)
+                }}
+                className={`flex-1 h-12 text-xs font-medium transition-all duration-200 ${
+                  currentView === "ai-suggestions" 
+                    ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg" 
+                    : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                }`}
+              >
+                <Sparkles className={`h-4 w-4 mr-1 ${currentView === "ai-suggestions" ? "text-white" : "text-gray-500"}`} />
+                AI
               </Button>
             </div>
           </div>

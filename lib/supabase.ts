@@ -50,6 +50,7 @@ export interface DatabaseProduct {
   swipes: {
     [userId: string]: boolean
   }
+  product_type: string
   created_at: string
   updated_at: string
 }

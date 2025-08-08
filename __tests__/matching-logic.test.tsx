@@ -7,6 +7,7 @@ describe('Matching Logic', () => {
       {
         id: '1',
         uploaded_by: 'user1',
+        product_type: 'sofa',
         swipes: {
           'user1': true,  // Creator automatically likes their own product
           'user2': true   // Partner also likes it
@@ -15,6 +16,7 @@ describe('Matching Logic', () => {
       {
         id: '2',
         uploaded_by: 'user2',
+        product_type: 'table',
         swipes: {
           'user1': true,  // User1 likes partner's product
           'user2': true   // Partner automatically likes their own product
@@ -23,6 +25,7 @@ describe('Matching Logic', () => {
       {
         id: '3',
         uploaded_by: 'user1',
+        product_type: 'chair',
         swipes: {
           'user1': true,  // Creator automatically likes their own product
           'user2': false  // Partner dislikes it
@@ -68,6 +71,7 @@ describe('Matching Logic', () => {
       {
         id: '1',
         uploaded_by: 'user1',
+        product_type: 'sofa',
         swipes: {
           'user1': true  // Creator automatically likes their own product
           // user2 hasn't swiped yet
@@ -76,6 +80,7 @@ describe('Matching Logic', () => {
       {
         id: '2',
         uploaded_by: 'user2',
+        product_type: 'table',
         swipes: {
           'user2': true  // Partner automatically likes their own product
           // user1 hasn't swiped yet
