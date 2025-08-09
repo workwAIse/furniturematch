@@ -25,6 +25,8 @@ import { recordAction, getUserStats } from "@/lib/gamification"
 import { useToast } from "@/hooks/use-toast"
 import { StreakBadge } from "@/components/streak-badge"
 import { BadgesModal } from "@/components/badges-modal"
+import { CompareOverlay } from "@/components/compare-overlay"
+import { groupMatchedByCategory, buildInitialCompareState, advanceComparison, findProductById } from "@/lib/favorites"
 
 interface SwipeGesture {
   startX: number
@@ -65,6 +67,10 @@ export default function FurnitureMatcher() {
   
   // Active tab state
   const [activeTab, setActiveTab] = useState<'matches' | 'yours' | 'partners'>('matches')
+  // Favorites & Compare state
+  const [favoritesByCategory, setFavoritesByCategory] = useState<Record<string, string>>({})
+  const [compareStateByCategory, setCompareStateByCategory] = useState<Record<string, { currentWinnerId: string | null; queue: string[] }>>({})
+  const [compareUI, setCompareUI] = useState<{ open: boolean; category: string | null }>({ open: false, category: null })
   const [swipeGesture, setSwipeGesture] = useState<SwipeGesture>({
     startX: 0,
     startY: 0,
@@ -429,22 +435,96 @@ export default function FurnitureMatcher() {
     if (!user?.email) return []
     const databaseUserId = mapUserToDatabaseId(user.email)
     const otherUserId = getOtherUserId()
-    
     if (!otherUserId) return []
-    
+
     return products.filter((product) => {
-      // A match occurs when both users like the same product
-      // Case 1: You uploaded it and your partner liked it
-      if (product.uploaded_by === databaseUserId) {
-        return product.swipes[otherUserId] === true
-      }
-      // Case 2: Your partner uploaded it and you liked it
-      else if (product.uploaded_by === otherUserId) {
-        return product.swipes[databaseUserId] === true
-      }
-      
-      return false
+      const oppositeUser = product.uploaded_by === databaseUserId ? otherUserId : databaseUserId
+      return product.swipes[oppositeUser] === true
     })
+  }
+
+  // Derived grouping and conflicts for Matches
+  const matchedProducts = useMemo(() => getMatchedProducts(), [products, user?.email])
+  const groupedByCategory = useMemo(() => groupMatchedByCategory(matchedProducts), [matchedProducts])
+
+  const openCompareForCategory = async (category: string) => {
+    const items = groupedByCategory[category] || []
+    if (items.length <= 1) return
+    try {
+      if (!user?.email) return
+      const userId = mapUserToDatabaseId(user.email)
+      // Try loading existing state from DB
+      const existing = await DatabaseService.getCompareState(userId, category)
+      if (existing) {
+        setCompareStateByCategory((prev) => ({ ...prev, [category]: { currentWinnerId: existing.current_winner_id, queue: existing.queue } }))
+      } else {
+        const initial = buildInitialCompareState(items)
+        setCompareStateByCategory((prev) => ({ ...prev, [category]: initial }))
+        await DatabaseService.upsertCompareState(userId, category, { current_winner_id: initial.currentWinnerId, queue: initial.queue })
+      }
+      setCompareUI({ open: true, category })
+    } catch (e) {
+      console.warn('Failed to open compare (DB state). Falling back to local-only.', e)
+      setCompareStateByCategory((prev) => {
+        const existingLocal = prev[category]
+        if (existingLocal) return prev
+        return { ...prev, [category]: buildInitialCompareState(items) }
+      })
+      setCompareUI({ open: true, category })
+    }
+  }
+
+  const handlePickWinner = async (productId: string) => {
+    const category = compareUI.category
+    if (!category) return
+    const current = compareStateByCategory[category]
+    if (!current) return
+
+    const res = advanceComparison({ currentWinnerId: current.currentWinnerId, queue: current.queue }, productId)
+    setCompareStateByCategory((prev) => ({ ...prev, [category]: res.state }))
+
+    // Persist effects after state update
+    try {
+      if (!user?.email) return
+      const userId = mapUserToDatabaseId(user.email)
+      if (res.done) {
+        const winnerId = res.state.currentWinnerId || productId
+        setFavoritesByCategory((f) => ({ ...f, [category]: winnerId }))
+        setCompareUI({ open: false, category: null })
+        await DatabaseService.setFavorite(userId, category, winnerId)
+        await DatabaseService.clearCompareState(userId, category)
+      } else {
+        await DatabaseService.upsertCompareState(userId, category, { current_winner_id: res.state.currentWinnerId, queue: res.state.queue })
+      }
+    } catch (e) {
+      console.warn('Failed to persist compare state/favorite. Continuing locally.', e)
+    }
+  }
+
+  const reopenDecision = (category: string) => {
+    // Clear favorite and rebuild compare from all matched items in category
+    setFavoritesByCategory((f) => {
+      const { [category]: _, ...rest } = f
+      return rest
+    })
+    const items = groupedByCategory[category] || []
+    const initial = buildInitialCompareState(items)
+    setCompareStateByCategory((prev) => ({ ...prev, [category]: initial }))
+    ;(async () => {
+      try {
+        if (user?.email) {
+          const userId = mapUserToDatabaseId(user.email)
+          await DatabaseService.clearFavorite(userId, category)
+        }
+        if (user?.email) {
+          const userId = mapUserToDatabaseId(user.email)
+          await DatabaseService.upsertCompareState(userId, category, { current_winner_id: initial.currentWinnerId, queue: initial.queue })
+        }
+      } catch (e) {
+        console.warn('Failed to persist reopened compare state', e)
+      }
+    })()
+    setCompareUI({ open: true, category })
   }
 
   const getYourProducts = () => {
@@ -459,30 +539,23 @@ export default function FurnitureMatcher() {
     return products.filter((product) => product.uploaded_by !== databaseUserId)
   }
 
-  const getOtherUserId = () => {
+  function getOtherUserId(): string | null {
     if (!user?.email) return null
     const databaseUserId = mapUserToDatabaseId(user.email)
     return databaseUserId === 'user1' ? 'user2' : 'user1'
   }
 
-  // Helper function to determine product state
+  // Helper to derive product state based on "opposite of uploader" rule
+  // - matched   → if the opposite user of the uploader swiped true
+  // - rejected  → if the opposite user of the uploader swiped false
+  // - pending   → if the opposite user hasn't swiped yet
   const getProductState = (product: Product, currentUserId: string): 'match' | 'rejected' | 'pending' => {
     const otherUserId = currentUserId === 'user1' ? 'user2' : 'user1'
-    
-    // Check if it's a match (both users like the same product)
-    const isMatch = (product.uploaded_by === currentUserId && product.swipes[otherUserId] === true) ||
-                   (product.uploaded_by === otherUserId && product.swipes[currentUserId] === true)
-    
-    if (isMatch) {
-      return 'match'
-    }
-    
-    // Check if current user has swiped
-    const hasSwiped = product.swipes[currentUserId] !== undefined
-    if (hasSwiped) {
-      return product.swipes[currentUserId] === true ? 'match' : 'rejected'
-    }
-    
+    const requiredUserId = product.uploaded_by === currentUserId ? otherUserId : currentUserId
+    const requiredSwipe = product.swipes[requiredUserId]
+
+    if (requiredSwipe === true) return 'match'
+    if (requiredSwipe === false) return 'rejected'
     return 'pending'
   }
 
@@ -743,7 +816,7 @@ export default function FurnitureMatcher() {
   }
 
   const productsToSwipe = getProductsToSwipe()
-  const matchedProducts = getMatchedProducts()
+  // NOTE: keep single source of truth for matchedProducts via useMemo above
 
   const getSwipeTransform = () => {
     if (!swipeGesture.isDragging) return "translateX(0px) rotate(0deg)"
@@ -824,7 +897,10 @@ export default function FurnitureMatcher() {
             <Button
               variant="outline"
               onClick={() => {
-                openIframe(recentlyAddedProduct.url, recentlyAddedProduct.title)
+                // Navigate to Matches view → Yours tab (pending) to see the newly added item
+                setShowSuccess(false)
+                setCurrentView("matched")
+                setActiveTab('yours')
               }}
               className="border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300 font-medium"
             >
@@ -1095,18 +1171,33 @@ export default function FurnitureMatcher() {
                   className="mb-4 p-3 bg-gray-50 rounded-lg"
                 />
                 
-                {/* Filtered Products */}
-                {filteredMatches.map((product) => (
-                  <EnhancedProductCard
-                    key={product.id}
-                    product={product}
-                    currentUserId={mapUserToDatabaseId(user?.email || "")}
-                    onViewProduct={openIframe}
-                    onDelete={handleDeleteProduct}
-                    onTypeChange={handleProductTypeChange}
-                    variant="compact"
-                    showActions={true}
-                  />
+                {/* Filtered Products grouped by category with conflict badge */}
+                {Object.entries(groupedByCategory).map(([category, items]) => (
+                  <div key={category} className="space-y-2">
+                    <div className="flex items-center justify-between px-2">
+                      <div className="text-xs font-semibold text-gray-700">{category}</div>
+                      {items.length > 1 && !favoritesByCategory[category] && (
+                        <button onClick={() => openCompareForCategory(category)} className="text-[10px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+                          Conflict: {items.length}
+                        </button>
+                      )}
+                      {favoritesByCategory[category] && (
+                        <div className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">Favorite set</div>
+                      )}
+                    </div>
+                    {items.map((product) => (
+                      <EnhancedProductCard
+                        key={product.id}
+                        product={product}
+                        currentUserId={mapUserToDatabaseId(user?.email || "")}
+                        onViewProduct={openIframe}
+                        onDelete={handleDeleteProduct}
+                        onTypeChange={handleProductTypeChange}
+                        variant="compact"
+                        showActions={true}
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -1420,6 +1511,22 @@ export default function FurnitureMatcher() {
           onClose={closeIframe}
           onBack={goBackFromIframe}
           onViewExternal={openExternal}
+        />
+
+        {/* Compare Overlay */}
+        <CompareOverlay
+          isOpen={compareUI.open}
+          category={compareUI.category || ''}
+          currentWinner={findProductById(products, compareUI.category ? compareStateByCategory[compareUI.category]?.currentWinnerId || null : null)}
+          challenger={(() => {
+            const cat = compareUI.category
+            if (!cat) return undefined
+            const state = compareStateByCategory[cat]
+            const nextId = state?.queue[0] || null
+            return findProductById(products, nextId)
+          })()}
+          onPickWinner={handlePickWinner}
+          onClose={() => setCompareUI({ open: false, category: null })}
         />
       </div>
     </ProtectedRoute>

@@ -17,6 +17,85 @@ export class DatabaseService {
     return data || []
   }
 
+  // Favorites API (per-user)
+  static async getFavorites(userId: string): Promise<Array<{ category: string; product_id: string }>> {
+    const { data, error } = await (supabase as any)
+      .from('favorites')
+      .select('category, product_id')
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error fetching favorites:', error)
+      throw new Error('Failed to fetch favorites')
+    }
+    return (data || []) as Array<{ category: string; product_id: string }>
+  }
+
+  static async setFavorite(userId: string, category: string, productId: string): Promise<void> {
+    // Upsert unique (user_id, category)
+    const { error } = await (supabase as any)
+      .from('favorites')
+      .upsert({ user_id: userId, category, product_id: productId }, { onConflict: 'user_id,category' })
+
+    if (error) {
+      console.error('Error setting favorite:', error)
+      throw new Error('Failed to set favorite')
+    }
+  }
+
+  static async clearFavorite(userId: string, category: string): Promise<void> {
+    const { error } = await (supabase as any)
+      .from('favorites')
+      .delete()
+      .eq('user_id', userId)
+      .eq('category', category)
+
+    if (error) {
+      console.error('Error clearing favorite:', error)
+      throw new Error('Failed to clear favorite')
+    }
+  }
+
+  // Compare state API (per-user)
+  static async getCompareState(userId: string, category: string): Promise<{ current_winner_id: string | null; queue: string[] } | null> {
+    const { data, error } = await (supabase as any)
+      .from('compare_states')
+      .select('current_winner_id, queue')
+      .eq('user_id', userId)
+      .eq('category', category)
+      .single()
+
+    if (error && error.code !== 'PGRST116' && error.details !== 'Results contain 0 rows') {
+      console.error('Error fetching compare state:', error)
+      throw new Error('Failed to fetch compare state')
+    }
+    return (data as any) || null
+  }
+
+  static async upsertCompareState(userId: string, category: string, state: { current_winner_id: string | null; queue: string[] }): Promise<void> {
+    const { error } = await (supabase as any)
+      .from('compare_states')
+      .upsert({ user_id: userId, category, current_winner_id: state.current_winner_id, queue: state.queue }, { onConflict: 'user_id,category' })
+
+    if (error) {
+      console.error('Error upserting compare state:', error)
+      throw new Error('Failed to upsert compare state')
+    }
+  }
+
+  static async clearCompareState(userId: string, category: string): Promise<void> {
+    const { error } = await (supabase as any)
+      .from('compare_states')
+      .delete()
+      .eq('user_id', userId)
+      .eq('category', category)
+
+    if (error) {
+      console.error('Error clearing compare state:', error)
+      throw new Error('Failed to clear compare state')
+    }
+  }
+
   // Add a new product
   static async addProduct(product: Omit<Product, 'id'>): Promise<Product> {
     const { data, error } = await supabase
