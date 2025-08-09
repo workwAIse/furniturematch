@@ -167,6 +167,23 @@ export class DatabaseService {
     return data
   }
 
+  // Update a single product's price (nullable)
+  static async updateProductPrice(productId: string, price: string | null): Promise<Product> {
+    const { data, error } = await supabase
+      .from('products')
+      .update({ price })
+      .eq('id', productId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating product price:', error)
+      throw new Error('Failed to update product price')
+    }
+
+    return data
+  }
+
   // Comment methods
   // Get comments for a product
   static async getComments(productId: string): Promise<Comment[]> {
