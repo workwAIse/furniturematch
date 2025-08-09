@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, X, ExternalLink, Eye, Globe } from "lucide-react"
+import { ArrowLeft, X, Eye, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface IframeHeaderProps {
@@ -86,7 +86,7 @@ export function IframeHeader({
           className="h-8 px-3 text-xs"
           onClick={handleOpenInNewTab}
         >
-          <Globe className="h-3 w-3 mr-1" />
+          <ExternalLink className="h-3 w-3 mr-1" />
           View External
         </Button>
 

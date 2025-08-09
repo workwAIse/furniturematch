@@ -1,6 +1,9 @@
+"use client"
+
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Sparkles, AlertCircle } from 'lucide-react'
@@ -47,6 +50,8 @@ export function AISuggestionsTab({ onViewProduct, onAddToCollection }: AISuggest
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isAccepting, setIsAccepting] = useState<string | null>(null)
+  const [minPrice, setMinPrice] = useState<string>('')
+  const [maxPrice, setMaxPrice] = useState<string>('')
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -82,10 +87,16 @@ export function AISuggestionsTab({ onViewProduct, onAddToCollection }: AISuggest
     
     setIsLoading(true)
     try {
-      const requestBody = {
+      const requestBody: any = {
         category,
         userId: mapUserToDatabaseId(user.email),
         count: 3
+      }
+      if (minPrice || maxPrice) {
+        requestBody.priceRange = {
+          ...(minPrice ? { min: Number(minPrice) } : {}),
+          ...(maxPrice ? { max: Number(maxPrice) } : {}),
+        }
       }
       console.log('[AI_SUGGESTIONS_TAB] Request body:', requestBody)
       
@@ -208,6 +219,23 @@ export function AISuggestionsTab({ onViewProduct, onAddToCollection }: AISuggest
                 ))}
               </SelectContent>
             </Select>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                min={0}
+                placeholder="Min €"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+              />
+              <Input
+                type="number"
+                min={0}
+                placeholder="Max €"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+              />
+            </div>
             
             <Button 
               onClick={generateSuggestions}

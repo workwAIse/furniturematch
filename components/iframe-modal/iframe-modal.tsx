@@ -53,7 +53,7 @@ export function IframeModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center md:p-4 overscroll-contain">
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
@@ -61,7 +61,7 @@ export function IframeModal({
       
       <div
         ref={modalRef}
-        className="relative w-full h-full max-w-6xl max-h-[90vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full h-[100svh] md:h-auto md:max-h-[90svh] max-w-6xl bg-white rounded-none md:rounded-lg shadow-2xl overflow-hidden flex flex-col overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         <IframeHeader

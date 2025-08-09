@@ -87,42 +87,10 @@ export class AISuggestionService {
     return result.suggestions;
   }
 
-  private static buildPrompt(request: AISuggestionRequest): string {
-    const matches = request.existingMatches.map(m => 
-      `${m.title} (${m.product_type}) - ${m.retailer}`
-    ).join('\n');
-
-    return `
-Generate ${request.count} furniture suggestions for category: "${request.category}"
-
-User's existing matches:
-${matches}
-
-Requirements:
-- Generate realistic furniture items that complement their existing style
-- Include diverse retailers (IKEA, Wayfair, Amazon, etc.)
-- Provide detailed descriptions
-- Suggest reasonable prices
-- Generate realistic product URLs
-- Explain why each item would work well with their existing matches
-
-Return as JSON with this structure:
-{
-  "suggestions": [
-    {
-      "title": "Product Name",
-      "description": "Detailed description",
-      "image": "https://example.com/image.jpg", 
-      "price": "$299",
-      "retailer": "IKEA",
-      "url": "https://example.com/product",
-      "reasoning": "Why this fits their style",
-      "confidence": 0.85
-    }
-  ]
-}
-`;
-  }
+  // Prompt now includes three context blocks:
+  // - Your past matches (liked): Product, Brand, Price, Description
+  // - No matches (disliked real items): Product, Brand, Price, Description
+  // - No matches (discarded AI suggestions): Product, Brand, AI justification, Confidence
 }
 ```
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AISuggestionService } from '@/lib/ai-suggestion-service'
 import { SearchService } from '@/lib/search-service'
-import { ScrapingService } from '@/lib/scraping-service'
 import { DatabaseService } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[AI_SUGGESTIONS_API] Request body:', body)
     
-    const { category, userId, count = 3 } = body
+    const { category, userId, count = 3, priceRange } = body
     
     if (!category || !userId) {
       console.error('[AI_SUGGESTIONS_API] Missing required fields:', { category, userId })
@@ -23,22 +22,46 @@ export async function POST(request: NextRequest) {
     
     console.log('[AI_SUGGESTIONS_API] Valid request:', { category, userId, count })
     
-    // Get user's existing matches
-    console.log('[AI_SUGGESTIONS_API] Fetching user matches...')
-    const matches = await DatabaseService.getMatchedProducts()
-    const userMatches = matches.filter(m => 
-      m.uploaded_by === userId || 
-      (m.swipes[userId] === true)
-    )
-    console.log('[AI_SUGGESTIONS_API] User matches found:', userMatches.length)
+    // Build richer preference context from products and rejected suggestions
+    console.log('[AI_SUGGESTIONS_API] Gathering preference context...')
+    const allProducts = await DatabaseService.getProducts()
+
+    const liked = allProducts
+      .filter(p => p.swipes?.[userId] === true)
+      .map(p => ({
+        title: p.title,
+        retailer: p.retailer,
+        price: p.price,
+        description: p.description,
+      }))
+
+    const disliked = allProducts
+      .filter(p => p.swipes?.[userId] === false)
+      .map(p => ({
+        title: p.title,
+        retailer: p.retailer,
+        price: p.price,
+        description: p.description,
+      }))
+
+    const rejectedAISuggestions = (await DatabaseService.getAISuggestions(userId, 'rejected'))
+      .map(s => ({
+        title: s.suggested_product?.title,
+        retailer: s.suggested_product?.retailer,
+        reasoning: s.reasoning,
+        confidence: s.confidence_score,
+      }))
 
     // Generate AI suggestions (product names only)
     console.log('[AI_SUGGESTIONS_API] Calling AI service...')
     const aiSuggestions = await AISuggestionService.generateSuggestions({
       category,
       userId,
-      existingMatches: userMatches,
-      count
+      count,
+      liked,
+      disliked,
+      rejectedAISuggestions,
+      priceRange,
     })
     console.log('[AI_SUGGESTIONS_API] AI suggestions generated:', aiSuggestions.length)
 
@@ -47,15 +70,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ suggestions: [] })
     }
 
-    // Process each suggestion through search and scraping
-    console.log('[AI_SUGGESTIONS_API] Processing suggestions through search and scraping...')
+    // Process each suggestion through search (no scraping)
+    console.log('[AI_SUGGESTIONS_API] Processing suggestions through search...')
     const processedSuggestions = []
     
     for (const aiSuggestion of aiSuggestions) {
       try {
         console.log(`[AI_SUGGESTIONS_API] Processing suggestion: ${aiSuggestion.name} from ${aiSuggestion.retailer}`)
         
-        // Step 1: Search for product URL
+        // Step 1: Search for product URL only
         const productUrl = await SearchService.findProductURL(
           aiSuggestion.name,
           aiSuggestion.retailer,
@@ -67,18 +90,20 @@ export async function POST(request: NextRequest) {
           continue
         }
         
-        // Step 2: Scrape product details
-        const scrapedProduct = await ScrapingService.scrapeProduct(productUrl, aiSuggestion.retailer)
-        
-        // Step 3: Combine AI suggestion with scraped data
-        const fullSuggestion = {
-          ...scrapedProduct,
+        // Step 2: Create suggestion with URL only (no scraping)
+        const suggestion = {
+          title: aiSuggestion.name,
+          description: `AI-suggested ${aiSuggestion.category} from ${aiSuggestion.retailer}`,
+          image: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(aiSuggestion.name)}`,
+          price: undefined,
+          retailer: aiSuggestion.retailer,
+          url: productUrl,
           reasoning: aiSuggestion.reasoning,
           confidence: aiSuggestion.confidence
         }
         
-        processedSuggestions.push(fullSuggestion)
-        console.log(`[AI_SUGGESTIONS_API] Successfully processed: ${fullSuggestion.title}`)
+        processedSuggestions.push(suggestion)
+        console.log(`[AI_SUGGESTIONS_API] Successfully processed: ${suggestion.title}`)
         
       } catch (error) {
         console.error(`[AI_SUGGESTIONS_API] Failed to process suggestion ${aiSuggestion.name}:`, error)
