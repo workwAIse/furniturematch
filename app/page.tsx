@@ -24,6 +24,7 @@ import { AISuggestionsTab } from "@/components/ai-suggestions-tab"
 import { recordAction, getUserStats } from "@/lib/gamification"
 import { useToast } from "@/hooks/use-toast"
 import { StreakBadge } from "@/components/streak-badge"
+import { BadgesModal } from "@/components/badges-modal"
 
 interface SwipeGesture {
   startX: number
@@ -53,6 +54,7 @@ export default function FurnitureMatcher() {
   const [showMatch, setShowMatch] = useState(false)
   const [lastSwipeTime, setLastSwipeTime] = useState(0)
   const { toast } = useToast()
+  const [badgesOpen, setBadgesOpen] = useState(false)
   // Separate filter states for each tab
   const [matchesProductType, setMatchesProductType] = useState<string | null>(null)
   const [matchesOwner, setMatchesOwner] = useState<'all' | 'me' | 'partner'>('all')
@@ -1236,7 +1238,12 @@ export default function FurnitureMatcher() {
 
             <div className="flex items-center gap-2">
               {user?.email && (
-                <StreakBadge userId={mapUserToDatabaseId(user.email)} />
+                <>
+                  <StreakBadge userId={mapUserToDatabaseId(user.email)} />
+                  <Button variant="outline" size="sm" className="text-xs h-8 px-3" onClick={() => setBadgesOpen(true)}>
+                    Badges
+                  </Button>
+                </>
               )}
               <Button
                 variant="outline"
@@ -1399,6 +1406,11 @@ export default function FurnitureMatcher() {
             </div>
           </div>
         </div>
+
+        {/* Badges Modal */}
+        {user?.email && (
+          <BadgesModal userId={mapUserToDatabaseId(user.email)} open={badgesOpen} onOpenChange={setBadgesOpen} />
+        )}
 
         {/* Iframe Modal */}
         <IframeModal

@@ -146,4 +146,29 @@ export function evaluateCategoryBadge(productType?: string | null) {
   return null
 }
 
+export async function getUserBadges(userId: string) {
+  const { data, error } = await supabase
+    .from('user_badges')
+    .select('id, badge_id, earned_at, badges:badge_id ( id, name, description, icon )')
+    .eq('user_id', userId)
+    .order('earned_at', { ascending: false })
+
+  if (error) {
+    console.warn('getUserBadges error:', error)
+    return []
+  }
+  // Normalize nested badge
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    badge_id: row.badge_id,
+    earned_at: row.earned_at,
+    badge: row.badges ? {
+      id: row.badges.id,
+      name: row.badges.name,
+      description: row.badges.description,
+      icon: row.badges.icon,
+    } : undefined,
+  }))
+}
+
 
