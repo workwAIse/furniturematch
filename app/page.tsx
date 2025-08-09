@@ -1304,7 +1304,7 @@ export default function FurnitureMatcher() {
       <div className="h-mobile-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex flex-col overflow-hidden">
         {/* Enhanced Header - Fixed */}
         <div className="bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 flex-shrink-0 safe-area-top">
-          <div className="flex items-center justify-between p-3">
+          <div className="flex flex-wrap items-center justify-between p-3 gap-2">
             {currentView !== "swipe" && (
               <Button 
                 variant="ghost" 
@@ -1320,11 +1320,11 @@ export default function FurnitureMatcher() {
               </Button>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center">
                 <Users className="h-4 w-4 text-white" />
               </div>
-              <span className="font-bold text-gray-800 text-base">FurnitureMatch</span>
+              <span className="font-bold text-gray-800 text-base truncate">FurnitureMatch</span>
             </div>
 
             <div className="flex items-center gap-2">

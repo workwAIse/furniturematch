@@ -15,12 +15,12 @@ export function StreakBadge({ userId }: { userId: string }) {
   const streakBadgeId = getBestStreakBadgeId(streak)
   const streakImg = getBadgeImage(streakBadgeId)
   return streakImg ? (
-    <div className="flex items-center gap-1">
-      <Image src={streakImg.src} alt={streakImg.alt} width={20} height={20} />
-      <Badge className="bg-orange-500/90 text-white">{streak} day{streak === 1 ? '' : 's'}</Badge>
+    <div className="flex items-center gap-1 min-w-0">
+      <Image src={streakImg.src} alt={streakImg.alt} width={20} height={20} className="shrink-0" />
+      <Badge className="bg-orange-500/90 text-white whitespace-nowrap">{streak} day{streak === 1 ? '' : 's'}</Badge>
     </div>
   ) : (
-    <Badge className="gap-1 bg-orange-500/90 text-white">{streak} day{streak === 1 ? '' : 's'}</Badge>
+    <Badge className="gap-1 bg-orange-500/90 text-white whitespace-nowrap">{streak} day{streak === 1 ? '' : 's'}</Badge>
   )
 }
 
