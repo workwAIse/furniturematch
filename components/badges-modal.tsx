@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Award, Flame } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge as UIBadge } from '@/components/ui/badge'
@@ -76,7 +77,15 @@ export function BadgesModal({ userId, open, onOpenChange }: BadgesModalProps) {
                 {badges.map(b => (
                   <li key={b.id} className="flex items-center justify-between rounded-md border p-3 bg-background">
                     <div className="flex items-center gap-3">
-                      <div className="text-xl" aria-hidden>{b.badge?.icon ?? '🏅'}</div>
+                      {(() => {
+                        const id = b.badge?.id || b.badge_id
+                        const img = require('@/lib/badge-assets').getBadgeImage(id)
+                        return img ? (
+                          <Image src={img.src} alt={img.alt} width={28} height={28} />
+                        ) : (
+                          <div className="text-xl" aria-hidden>🏅</div>
+                        )
+                      })()}
                       <div>
                         <div className="text-sm font-medium">{b.badge?.name ?? b.badge_id}</div>
                         <div className="text-xs text-muted-foreground">{b.badge?.description}</div>
