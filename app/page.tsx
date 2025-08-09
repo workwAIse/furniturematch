@@ -774,7 +774,7 @@ export default function FurnitureMatcher() {
   }
 
   const productsToSwipe = getProductsToSwipe()
-  const matchedProducts = getMatchedProducts()
+  // NOTE: keep single source of truth for matchedProducts via useMemo above
 
   const getSwipeTransform = () => {
     if (!swipeGesture.isDragging) return "translateX(0px) rotate(0deg)"
