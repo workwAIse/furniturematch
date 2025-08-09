@@ -3,6 +3,13 @@
 ## Overview
 Introduce Favorites on the Collaboration Board with automatic category grouping, conflict surfacing, and a 1-vs-1 "winner-stays" CompareOverlay. Persist progress locally so users can resume comparisons across sessions. Toggle between Board and Moodboard views without losing state.
 
+### Decisions (confirmed)
+- Use category as saved in the product table (`product.product_type`).
+- Challenger ordering: use the simplest deterministic approach (stable by created date or current list order).
+- No tie/skip option in CompareOverlay.
+- Reopen decision: clears the favorite and restarts a fresh bracket with all matched items in that category (including the previous favorite) – winner-stays anew.
+- Persistence in DB and per-user: favorites and compare progress are stored per user.
+
 ## Goals (Must-Have)
 - Board ↔ Moodboard toggle on the Collaboration Board; state persists across reloads.
 - Auto category grouping for matched items (e.g., Chair, Sofa, Table).
@@ -61,16 +68,12 @@ Introduce Favorites on the Collaboration Board with automatic category grouping,
 - Non-winning items remain visible in their category and in Moodboard; they are not deleted/archived.
 
 ## State & Persistence
-- Local-first persistence via `localStorage` (MVP) with optional upgrade path to IndexedDB.
-- Suggested keys (namespaced):
-  - `fm:view` → "board" | "moodboard"
-  - `fm:favorites` → `{ [categoryId: string]: productId }`
-  - `fm:compareQueue:{categoryId}` → `string[]` remaining challenger product IDs (head-to-head order)
-  - `fm:currentWinner:{categoryId}` → `string | null` (null if starting fresh)
-  - `fm:lastUpdated` → ISO timestamp for basic staleness checks
+- Persist in DB per user (with optional local caching for UX). Proposed tables:
+  - `favorites(user_id, category, product_id, created_at, updated_at)` – unique on `(user_id, category)`
+  - `compare_states(user_id, category, current_winner_id, queue UUID[], updated_at)` – unique on `(user_id, category)`
 - Resume logic:
-  - If `compareQueue` not empty, CompareOverlay continues where left off.
-  - If a `currentWinner` exists and queue is empty, set Favorite.
+  - If `compare_states.queue` not empty, CompareOverlay continues where left off.
+  - If `current_winner_id` exists and `queue` is empty, that item becomes Favorite.
 
 ## Data Model Additions (App State)
 - In `app/page.tsx` (or extracted store):
@@ -98,16 +101,55 @@ Introduce Favorites on the Collaboration Board with automatic category grouping,
 - E2E (if available): multi-session resume, mobile tap targets, accessibility checks.
 
 ## Open Questions
-1) Category source of truth: use existing `product.product_type` as-is, or normalize to a canonical set (e.g., via `ProductTypeDetector`)?
-2) Ordering of challengers: deterministic (e.g., stable sort by added date/price/title) or random?
-3) Tie-handling: If a user wants to skip/undecide between two items—should we support a "skip" or "compare later"?
-4) Reopen scope: When reopening, include all matched items for that category (including the last favorite) or exclude the last favorite until the end?
-5) Persistence scope: strictly local-only for now, or mirror to DB for cross-device continuity? If mirrored, whose favorite is it (per-user vs shared)?
-6) Moodboard content: Should Moodboard show all matched items (grouped) plus the pinned favorites on top, or a curated layout? Any layout guidelines?
-7) Conflict badge placement: at category header only, or also inline per-card?
-8) Badge style: desired exact copy/colors to match current design system?
-9) Mobile gestures: Allow swipe-to-select in CompareOverlay, or tap-only?
-10) Permission model: Can both collaborators set favorites, or is there a single shared favorite per category? How to resolve simultaneous decisions?
+Resolved:
+1) Category source: use `product.product_type` as-is.
+2) Ordering: simplest deterministic approach.
+3) Tie/skip: No skip option.
+4) Reopen scope: include all matched items (including previous favorite), start anew.
+5) Persistence: in DB, per user.
+
+Remaining:
+6) Moodboard content layout guidance (if any beyond grouping + pinned favorites).
+7) Conflict badge exact placement and copy.
+8) Badge style details to match design system.
+9) Mobile gestures beyond tap (stick to tap-only unless specified).
+10) Simultaneous edits: if both collaborators can set their own favorites independently (per-user), no conflict; shared favorite behavior is out of scope.
+
+## DB Persistence Plan (DDL Sketch)
+```sql
+-- Favorites: per-user favorite per category
+CREATE TABLE IF NOT EXISTS favorites (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL CHECK (user_id IN ('user1','user2')),
+  category VARCHAR(50) NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, category)
+);
+
+-- Compare state: resume in-progress comparisons per user/category
+CREATE TABLE IF NOT EXISTS compare_states (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id TEXT NOT NULL CHECK (user_id IN ('user1','user2')),
+  category VARCHAR(50) NOT NULL,
+  current_winner_id UUID NULL REFERENCES products(id) ON DELETE SET NULL,
+  queue UUID[] NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, category)
+);
+
+-- Triggers to maintain updated_at (reuses update_updated_at_column())
+CREATE TRIGGER update_favorites_updated_at 
+  BEFORE UPDATE ON favorites 
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_compare_states_updated_at 
+  BEFORE UPDATE ON compare_states 
+  FOR EACH ROW 
+  EXECUTE FUNCTION update_updated_at_column();
+```
 
 ## Acceptance Criteria (MVP)
 - Category groups render for matched items; conflicts show a badge with count > 1.
