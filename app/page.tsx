@@ -543,7 +543,7 @@ export default function FurnitureMatcher() {
     return products.filter((product) => product.uploaded_by !== databaseUserId)
   }
 
-  const getOtherUserId = () => {
+  function getOtherUserId(): string | null {
     if (!user?.email) return null
     const databaseUserId = mapUserToDatabaseId(user.email)
     return databaseUserId === 'user1' ? 'user2' : 'user1'
