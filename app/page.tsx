@@ -477,49 +477,49 @@ export default function FurnitureMatcher() {
   const handlePickWinner = async (productId: string) => {
     const category = compareUI.category
     if (!category) return
-    setCompareStateByCategory(async (prev) => {
+    let resLocal: { state: { currentWinnerId: string | null; queue: string[] }; done: boolean } | null = null
+    setCompareStateByCategory((prev) => {
       const current = prev[category]
       if (!current) return prev
       const res = advanceComparison({ currentWinnerId: current.currentWinnerId, queue: current.queue }, productId)
-      const next = { ...prev, [category]: res.state }
-      try {
-        if (!user?.email) return next
-        const userId = mapUserToDatabaseId(user.email)
-        if (res.done) {
-          const winnerId = res.state.currentWinnerId || productId
-          setFavoritesByCategory((f) => ({ ...f, [category]: winnerId }))
-          setCompareUI({ open: false, category: null })
-          await DatabaseService.setFavorite(userId, category, winnerId)
-          await DatabaseService.clearCompareState(userId, category)
-        } else {
-          await DatabaseService.upsertCompareState(userId, category, { current_winner_id: res.state.currentWinnerId, queue: res.state.queue })
-        }
-      } catch (e) {
-        console.warn('Failed to persist compare state/favorite. Continuing locally.', e)
-      }
-      return next
+      resLocal = res
+      return { ...prev, [category]: res.state }
     })
+
+    // Persist effects outside of state setter
+    try {
+      if (!resLocal) return
+      if (!user?.email) return
+      const userId = mapUserToDatabaseId(user.email)
+      if (resLocal.done) {
+        const winnerId = resLocal.state.currentWinnerId || productId
+        setFavoritesByCategory((f) => ({ ...f, [category]: winnerId }))
+        setCompareUI({ open: false, category: null })
+        await DatabaseService.setFavorite(userId, category, winnerId)
+        await DatabaseService.clearCompareState(userId, category)
+      } else {
+        await DatabaseService.upsertCompareState(userId, category, { current_winner_id: resLocal.state.currentWinnerId, queue: resLocal.state.queue })
+      }
+    } catch (e) {
+      console.warn('Failed to persist compare state/favorite. Continuing locally.', e)
+    }
   }
 
   const reopenDecision = (category: string) => {
     // Clear favorite and rebuild compare from all matched items in category
-    setFavoritesByCategory(async (f) => {
+    setFavoritesByCategory((f) => {
       const { [category]: _, ...rest } = f
-      try {
-        if (user?.email) {
-          const userId = mapUserToDatabaseId(user.email)
-          await DatabaseService.clearFavorite(userId, category)
-        }
-      } catch (e) {
-        console.warn('Failed to clear favorite in DB. Proceeding.', e)
-      }
-      return rest as typeof f
+      return rest
     })
     const items = groupedByCategory[category] || []
     const initial = buildInitialCompareState(items)
     setCompareStateByCategory((prev) => ({ ...prev, [category]: initial }))
     ;(async () => {
       try {
+        if (user?.email) {
+          const userId = mapUserToDatabaseId(user.email)
+          await DatabaseService.clearFavorite(userId, category)
+        }
         if (user?.email) {
           const userId = mapUserToDatabaseId(user.email)
           await DatabaseService.upsertCompareState(userId, category, { current_winner_id: initial.currentWinnerId, queue: initial.queue })
