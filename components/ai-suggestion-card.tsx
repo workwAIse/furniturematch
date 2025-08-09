@@ -1,7 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Check, X, ExternalLink } from 'lucide-react'
+import { Check, X, Search } from 'lucide-react'
+import { OpenLinkControl } from '@/components/ui/open-link-control'
 
 interface AISuggestionCardProps {
   suggestion: {
@@ -48,14 +49,13 @@ export function AISuggestionCard({
             </div>
           </div>
           {onViewProduct && (
-            <Button
-              variant="ghost"
+            <OpenLinkControl
+              url={suggestion.suggested_product.url}
+              title={suggestion.suggested_product.title}
+              onOpenModal={onViewProduct}
               size="sm"
-              onClick={() => onViewProduct(suggestion.suggested_product.url, suggestion.suggested_product.title)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </Button>
+              label="View"
+            />
           )}
         </div>
         
@@ -77,6 +77,19 @@ export function AISuggestionCard({
           >
             <Check className="w-4 h-4 mr-2" />
             Add to Collection
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const q = `${suggestion.suggested_product.title} kaufen`
+              const url = `https://www.google.com/search?q=${encodeURIComponent(q)}`
+              window.open(url, '_blank', 'noopener,noreferrer')
+            }}
+            disabled={isLoading}
+            className="px-4"
+          >
+            <Search className="w-4 h-4 mr-1" />
+            Google
           </Button>
           <Button 
             variant="outline" 

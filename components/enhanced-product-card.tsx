@@ -1,8 +1,9 @@
 "use client"
 
 import React from "react"
-import { Heart, ExternalLink, Trash2, Clock, CheckCircle, XCircle, X, MessageCircle } from "lucide-react"
+import { Heart, Trash2, Clock, CheckCircle, XCircle, X, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { OpenLinkControl } from '@/components/ui/open-link-control'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ProductComments } from "@/components/product-comments"
@@ -193,15 +194,7 @@ export function EnhancedProductCard({
 
                 {/* Action buttons */}
                 <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => onViewProduct(product.url, product.title)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white text-xs h-8 px-3"
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
+                  <OpenLinkControl url={product.url} title={product.title} onOpenModal={onViewProduct} size="sm" label="View" />
                   {onSwipe && !hasSwiped && (
                     <>
                       <Button
@@ -344,14 +337,7 @@ export function EnhancedProductCard({
         <div className="flex items-center justify-end pt-2">
           {/* Action buttons */}
           <div className="flex gap-2">
-            <Button
-              variant="default"
-              onClick={() => onViewProduct(product.url, product.title)}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Product
-            </Button>
+            <OpenLinkControl url={product.url} title={product.title} onOpenModal={onViewProduct} label="View Product" />
             {onSwipe && !hasSwiped && (
               <>
                 <Button

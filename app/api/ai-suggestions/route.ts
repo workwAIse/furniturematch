@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('[AI_SUGGESTIONS_API] Request body:', body)
     
-    const { category, userId, count = 3 } = body
+    const { category, userId, count = 3, priceRange } = body
     
     if (!category || !userId) {
       console.error('[AI_SUGGESTIONS_API] Missing required fields:', { category, userId })
@@ -22,22 +22,46 @@ export async function POST(request: NextRequest) {
     
     console.log('[AI_SUGGESTIONS_API] Valid request:', { category, userId, count })
     
-    // Get user's existing matches
-    console.log('[AI_SUGGESTIONS_API] Fetching user matches...')
-    const matches = await DatabaseService.getMatchedProducts()
-    const userMatches = matches.filter(m => 
-      m.uploaded_by === userId || 
-      (m.swipes[userId] === true)
-    )
-    console.log('[AI_SUGGESTIONS_API] User matches found:', userMatches.length)
+    // Build richer preference context from products and rejected suggestions
+    console.log('[AI_SUGGESTIONS_API] Gathering preference context...')
+    const allProducts = await DatabaseService.getProducts()
+
+    const liked = allProducts
+      .filter(p => p.swipes?.[userId] === true)
+      .map(p => ({
+        title: p.title,
+        retailer: p.retailer,
+        price: p.price,
+        description: p.description,
+      }))
+
+    const disliked = allProducts
+      .filter(p => p.swipes?.[userId] === false)
+      .map(p => ({
+        title: p.title,
+        retailer: p.retailer,
+        price: p.price,
+        description: p.description,
+      }))
+
+    const rejectedAISuggestions = (await DatabaseService.getAISuggestions(userId, 'rejected'))
+      .map(s => ({
+        title: s.suggested_product?.title,
+        retailer: s.suggested_product?.retailer,
+        reasoning: s.reasoning,
+        confidence: s.confidence_score,
+      }))
 
     // Generate AI suggestions (product names only)
     console.log('[AI_SUGGESTIONS_API] Calling AI service...')
     const aiSuggestions = await AISuggestionService.generateSuggestions({
       category,
       userId,
-      existingMatches: userMatches,
-      count
+      count,
+      liked,
+      disliked,
+      rejectedAISuggestions,
+      priceRange,
     })
     console.log('[AI_SUGGESTIONS_API] AI suggestions generated:', aiSuggestions.length)
 

@@ -58,7 +58,7 @@ export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-50 overflow-hidden">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
           <p className="text-sm text-gray-500">Loading product page...</p>
@@ -91,7 +91,7 @@ export function IframeContent({ url, onLoad, onError }: IframeContentProps) {
       <iframe
         ref={iframeRef}
         srcDoc={proxyContent}
-        className="w-full h-full border-0"
+        className="w-full h-full border-0 overflow-auto"
         title="Product page"
         sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
       />
