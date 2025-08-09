@@ -25,6 +25,10 @@ import { recordAction, getUserStats } from "@/lib/gamification"
 import { useToast } from "@/hooks/use-toast"
 import { StreakBadge } from "@/components/streak-badge"
 import { BadgesModal } from "@/components/badges-modal"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Award, LogOut as LogoutIcon } from "lucide-react"
 import { CompareOverlay } from "@/components/compare-overlay"
 import { groupMatchedByCategory, buildInitialCompareState, advanceComparison, findProductById } from "@/lib/favorites"
 
@@ -1330,21 +1334,39 @@ export default function FurnitureMatcher() {
             <div className="flex items-center gap-2">
               {user?.email && (
                 <>
+                  {/* Streak micro-chip */}
                   <StreakBadge userId={mapUserToDatabaseId(user.email)} />
-                  <Button variant="outline" size="sm" className="text-xs h-8 px-3" onClick={() => setBadgesOpen(true)}>
-                    Badges
-                  </Button>
+
+                  {/* Badges icon-only */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" aria-label="Badges" onClick={() => setBadgesOpen(true)} className="h-8 w-8">
+                          <Award className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Badges</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {/* Overflow menu (logout) */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Avatar className="h-8 w-8 cursor-pointer">
+                        <AvatarFallback className="text-xs">{(user.email[0] || 'U').toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setBadgesOpen(true)}>
+                        <Award className="h-4 w-4 mr-2" /> Badges
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={signOut}>
+                        <LogoutIcon className="h-4 w-4 mr-2" /> Log Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={signOut}
-                className="text-xs h-8 px-3 border-gray-200 hover:border-red-300 hover:bg-red-50 text-gray-600 hover:text-red-600"
-              >
-                <LogOut className="h-3 w-3 mr-1" />
-                Log Out
-              </Button>
             </div>
           </div>
         </div>
