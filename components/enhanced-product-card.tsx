@@ -1,7 +1,7 @@
 "use client"
 
-import React from "react"
-import { Heart, Trash2, Clock, CheckCircle, XCircle, X, MessageCircle } from "lucide-react"
+import React, { useState } from "react"
+import { Heart, Trash2, Clock, CheckCircle, XCircle, X, MessageCircle, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OpenLinkControl } from '@/components/ui/open-link-control'
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,6 +10,8 @@ import { ProductComments } from "@/components/product-comments"
 import { ProductTypeBadge } from "@/components/product-type-badge"
 import { ProductTypeEditor } from "@/components/product-type-editor"
 import type { Product } from "@/lib/supabase"
+import { Input } from "@/components/ui/input"
+import { DatabaseService } from "@/lib/database"
 
 interface EnhancedProductCardProps {
   product: Product
@@ -38,13 +40,15 @@ export function EnhancedProductCard({
   const hasSwiped = product.swipes[currentUserId] !== undefined
   const liked = product.swipes[currentUserId] === true
   const otherUserId = currentUserId === 'user1' ? 'user2' : 'user1'
+  const oppositeUser = product.uploaded_by === currentUserId ? otherUserId : currentUserId
+  const oppositeState = product.swipes[oppositeUser] // true | false | undefined
 
   const getStatusBadge = () => {
-    // Check if this is a match (non-uploader liked the uploader's item)
-    const isMatch = (product.uploaded_by === currentUserId && product.swipes[otherUserId] === true) ||
-                   (product.uploaded_by === otherUserId && product.swipes[currentUserId] === true)
-    
-    if (isMatch) {
+    // Derive strictly from opposite user of the uploader
+    const oppositeUser = product.uploaded_by === currentUserId ? otherUserId : currentUserId
+    const state = product.swipes[oppositeUser]
+
+    if (state === true) {
       return (
         <Badge
           variant="default"
@@ -55,18 +59,15 @@ export function EnhancedProductCard({
         </Badge>
       )
     }
-    
-    if (hasSwiped) {
+
+    if (state === false) {
       return (
-        <Badge
-          variant={liked ? "default" : "destructive"}
-          className="text-xs font-medium bg-gradient-to-r from-green-500 to-green-600 text-white border-0"
-        >
-          <CheckCircle className="h-3 w-3 mr-1" />
-          You: {liked ? "❤️" : "❌"}
+        <Badge variant="destructive" className="text-xs font-medium">
+          <XCircle className="h-3 w-3 mr-1" /> Rejected
         </Badge>
       )
     }
+
     return (
       <Badge variant="outline" className="text-xs font-medium border-yellow-300 text-yellow-700 bg-yellow-50">
         <Clock className="h-3 w-3 mr-1" />
@@ -86,33 +87,45 @@ export function EnhancedProductCard({
     )
   }
 
-  const isMatch = (product.uploaded_by === currentUserId && product.swipes[otherUserId] === true) ||
-                   (product.uploaded_by === otherUserId && product.swipes[currentUserId] === true)
+  const isMatch = oppositeState === true
+
+  // Inline price editing (local state)
+  const [isEditingPrice, setIsEditingPrice] = useState(false)
+  const [priceDraft, setPriceDraft] = useState(product.price || "")
+  const [savingPrice, setSavingPrice] = useState(false)
+  const [localPrice, setLocalPrice] = useState(product.price || "")
+
+  const savePrice = async () => {
+    if (priceDraft === (localPrice || "")) {
+      setIsEditingPrice(false)
+      return
+    }
+    setSavingPrice(true)
+    try {
+      await DatabaseService.updateProductPrice(product.id, priceDraft || null)
+      setLocalPrice(priceDraft)
+      setIsEditingPrice(false)
+    } catch (e) {
+      console.error('Failed to update price', e)
+    } finally {
+      setSavingPrice(false)
+    }
+  }
 
   if (variant === "compact") {
     return (
       <Card className={`group hover:shadow-lg transition-all duration-300 border-0 bg-white/90 backdrop-blur-sm relative ${className}`}>
         {/* Status indicator triangle overlay - positioned relative to card */}
         <div className={`absolute top-0 left-0 w-10 h-10 z-10 ${
-          isMatch 
-            ? 'bg-green-500' 
-            : hasSwiped 
-              ? liked 
-                ? 'bg-green-500' 
-                : 'bg-red-500'
-              : 'bg-yellow-500'
+          oppositeState === true ? 'bg-green-500' : oppositeState === false ? 'bg-red-500' : 'bg-yellow-500'
         }`} style={{
           clipPath: 'polygon(0 0, 100% 0, 0 100%)'
         }}>
           <div className="absolute top-1 left-1 flex items-center justify-center w-5 h-5">
-            {isMatch ? (
+            {oppositeState === true ? (
               <CheckCircle className="h-3.5 w-3.5 text-white" />
-            ) : hasSwiped ? (
-              liked ? (
-                <CheckCircle className="h-3.5 w-3.5 text-white" />
-              ) : (
-                <X className="h-3.5 w-3.5 text-white" />
-              )
+            ) : oppositeState === false ? (
+              <X className="h-3.5 w-3.5 text-white" />
             ) : (
               <Clock className="h-3.5 w-3.5 text-white" />
             )}
@@ -182,14 +195,24 @@ export function EnhancedProductCard({
               {/* Bottom section: Price, status, and actions */}
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-3">
-                  {/* Price */}
-                  {product.price && (
-                    <span className="text-sm font-semibold text-green-600">
-                      {product.price}
-                    </span>
-                  )}
-                  
-
+                  {/* Price editor (compact) */}
+                  <div className="flex items-center gap-2">
+                    {isEditingPrice ? (
+                      <div className="flex items-center gap-2">
+                        <Input value={priceDraft} onChange={(e) => setPriceDraft(e.target.value)} className="h-8 w-28 text-sm" placeholder="EUR 0" />
+                        <Button size="sm" variant="ghost" disabled={savingPrice} onClick={savePrice} className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50">
+                          {savingPrice ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={savingPrice} onClick={() => { setIsEditingPrice(false); setPriceDraft(localPrice || "") }} className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setIsEditingPrice(true)} className="text-sm font-semibold text-green-600 hover:underline">
+                        {localPrice ? localPrice : "Set price"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action buttons */}
@@ -237,25 +260,15 @@ export function EnhancedProductCard({
     <Card className={`group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-sm overflow-hidden relative ${className}`}>
       {/* Status indicator triangle overlay - positioned relative to card */}
       <div className={`absolute top-0 left-0 w-16 h-16 z-10 ${
-        isMatch 
-          ? 'bg-green-500' 
-          : hasSwiped 
-            ? liked 
-              ? 'bg-green-500' 
-              : 'bg-red-500'
-            : 'bg-yellow-500'
+        oppositeState === true ? 'bg-green-500' : oppositeState === false ? 'bg-red-500' : 'bg-yellow-500'
       }`} style={{
         clipPath: 'polygon(0 0, 100% 0, 0 100%)'
       }}>
         <div className="absolute top-2 left-2 flex items-center justify-center w-8 h-8">
-          {isMatch ? (
+          {oppositeState === true ? (
             <CheckCircle className="h-5 w-5 text-white" />
-          ) : hasSwiped ? (
-            liked ? (
-              <CheckCircle className="h-5 w-5 text-white" />
-            ) : (
-              <X className="h-5 w-5 text-white" />
-            )
+          ) : oppositeState === false ? (
+            <X className="h-5 w-5 text-white" />
           ) : (
             <Clock className="h-5 w-5 text-white" />
           )}

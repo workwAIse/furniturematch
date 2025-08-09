@@ -100,6 +100,11 @@ export const FURNITURE_TYPES: Record<string, FurnitureType> = {
     name: 'Sideboard',
     keywords: ['sideboard', 'buffet', 'anrichte', 'credenza', 'server', 'dining storage']
   },
+  IMAGE: {
+    id: 'image',
+    name: 'Image',
+    keywords: ['image', 'photo', 'picture']
+  },
   PLANT_STAND: {
     id: 'plant_stand',
     name: 'Plant Stand',

@@ -21,6 +21,10 @@ import { ProductTypeDetector } from "@/lib/product-type-detector"
 import { ProductTypeBadge } from "@/components/product-type-badge"
 import { UnifiedFilter } from "@/components/unified-filter"
 import { AISuggestionsTab } from "@/components/ai-suggestions-tab"
+import { recordAction, getUserStats } from "@/lib/gamification"
+import { useToast } from "@/hooks/use-toast"
+import { StreakBadge } from "@/components/streak-badge"
+import { BadgesModal } from "@/components/badges-modal"
 
 interface SwipeGesture {
   startX: number
@@ -49,6 +53,8 @@ export default function FurnitureMatcher() {
   const [recentlyAddedProduct, setRecentlyAddedProduct] = useState<Product | null>(null)
   const [showMatch, setShowMatch] = useState(false)
   const [lastSwipeTime, setLastSwipeTime] = useState(0)
+  const { toast } = useToast()
+  const [badgesOpen, setBadgesOpen] = useState(false)
   // Separate filter states for each tab
   const [matchesProductType, setMatchesProductType] = useState<string | null>(null)
   const [matchesOwner, setMatchesOwner] = useState<'all' | 'me' | 'partner'>('all')
@@ -269,6 +275,17 @@ export default function FurnitureMatcher() {
       const savedProduct = await DatabaseService.addProduct(newProduct)
       console.log(`[ADD_PRODUCT] Product saved to database:`, savedProduct)
 
+      // Gamification: record add action and show badge toast if unlocked
+      try {
+        const { newBadges } = await recordAction(databaseUserId, 'add', savedProduct.product_type)
+        if (newBadges && newBadges.length > 0) {
+          const b = newBadges[0]
+          toast({ title: `Badge unlocked: ${b.name}`, description: b.description })
+        }
+      } catch (e) {
+        console.warn('Gamification add failed', e)
+      }
+
       // Update local state
       setProducts((prev) => {
         const updatedProducts = [...prev, savedProduct]
@@ -351,6 +368,16 @@ export default function FurnitureMatcher() {
         ...products.find(p => p.id === productId)?.swipes,
         [databaseUserId]: liked,
       })
+      // Gamification: record swipe action and show badge toast if unlocked
+      try {
+        const { newBadges } = await recordAction(databaseUserId, 'swipe')
+        if (newBadges && newBadges.length > 0) {
+          const b = newBadges[0]
+          toast({ title: `Badge unlocked: ${b.name}`, description: b.description })
+        }
+      } catch (e) {
+        console.warn('Gamification swipe failed', e)
+      }
 
       // Update local state
       setProducts((prev) =>
@@ -1209,7 +1236,15 @@ export default function FurnitureMatcher() {
               <span className="font-bold text-gray-800 text-base">FurnitureMatch</span>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              {user?.email && (
+                <>
+                  <StreakBadge userId={mapUserToDatabaseId(user.email)} />
+                  <Button variant="outline" size="sm" className="text-xs h-8 px-3" onClick={() => setBadgesOpen(true)}>
+                    Badges
+                  </Button>
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -1371,6 +1406,11 @@ export default function FurnitureMatcher() {
             </div>
           </div>
         </div>
+
+        {/* Badges Modal */}
+        {user?.email && (
+          <BadgesModal userId={mapUserToDatabaseId(user.email)} open={badgesOpen} onOpenChange={setBadgesOpen} />
+        )}
 
         {/* Iframe Modal */}
         <IframeModal
