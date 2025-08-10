@@ -1,26 +1,20 @@
 "use client"
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { getUserStats } from '@/lib/gamification'
-import { getBestStreakBadgeId, getBadgeImage } from '@/lib/badge-assets'
+// removed mini image badge for a cleaner UI
 
-export function StreakBadge({ userId }: { userId: string }) {
+export function StreakBadge({ userId, onClick }: { userId: string; onClick?: () => void }) {
   const [streak, setStreak] = useState<number>(0)
   useEffect(() => {
     if (!userId) return
     getUserStats(userId).then(s => setStreak(s.current_streak)).catch(() => {})
   }, [userId])
   if (!userId) return null
-  const streakBadgeId = getBestStreakBadgeId(streak)
-  const streakImg = getBadgeImage(streakBadgeId)
-  return streakImg ? (
-    <div className="flex items-center gap-1 min-w-0">
-      <Image src={streakImg.src} alt={streakImg.alt} width={20} height={20} className="shrink-0" />
+  return (
+    <button type="button" onClick={onClick} aria-label={`${streak} day streak (view badges)`} className="inline-flex items-center">
       <Badge className="bg-orange-500/90 text-white whitespace-nowrap">{streak} day{streak === 1 ? '' : 's'}</Badge>
-    </div>
-  ) : (
-    <Badge className="gap-1 bg-orange-500/90 text-white whitespace-nowrap">{streak} day{streak === 1 ? '' : 's'}</Badge>
+    </button>
   )
 }
 

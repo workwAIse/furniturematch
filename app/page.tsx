@@ -1334,20 +1334,8 @@ export default function FurnitureMatcher() {
             <div className="flex items-center gap-2">
               {user?.email && (
                 <>
-                  {/* Streak micro-chip */}
-                  <StreakBadge userId={mapUserToDatabaseId(user.email)} />
-
-                  {/* Badges icon-only */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="outline" size="icon" aria-label="Badges" onClick={() => setBadgesOpen(true)} className="h-8 w-8">
-                          <Award className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Badges</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {/* Streak chip opens badges + streak overview */}
+                  <StreakBadge userId={mapUserToDatabaseId(user.email)} onClick={() => setBadgesOpen(true)} />
 
                   {/* Overflow menu (logout) */}
                   <DropdownMenu>
@@ -1357,9 +1345,6 @@ export default function FurnitureMatcher() {
                       </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setBadgesOpen(true)}>
-                        <Award className="h-4 w-4 mr-2" /> Badges
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={signOut}>
                         <LogoutIcon className="h-4 w-4 mr-2" /> Log Out
                       </DropdownMenuItem>
